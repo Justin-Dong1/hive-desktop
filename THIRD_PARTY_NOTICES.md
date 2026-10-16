@@ -4,6 +4,8 @@
 
 The optional spectrum helper uses NAudio 1.10.0 under the Microsoft Public License (Ms-PL). Binaries are not included in this source repository. Obtain the official package and retain its licensing information when redistributing builds:
 
+Copyright (c) Mark Heath and contributors, 2020. Installer builds include NAudio.dll and the complete license in `resources/app/vendor/NAudio-1.10/LICENSE.txt`.
+
 - Package: https://api.nuget.org/v3-flatcontainer/naudio/1.10.0/naudio.1.10.0.nupkg
 - License: https://github.com/naudio/NAudio/blob/v1.10.0/license.txt
 

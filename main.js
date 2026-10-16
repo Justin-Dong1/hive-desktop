@@ -9,6 +9,12 @@ const { execFile } = require('child_process');
 
 const APP_NAME = '蜂巢桌面 · HIVE DESKTOP';
 const ROOT = __dirname;
+// Keep the existing profile when the executable/product name changes.
+if(app.isPackaged)app.setPath('userData',path.join(app.getPath('appData'),'glass-hive-desktop'));
+const packageSmoke=app.isPackaged&&process.argv.includes('--package-smoke');
+if(packageSmoke)app.setPath('userData',fs.mkdtempSync(path.join(os.tmpdir(),'hive-package-smoke-')));
+const DATA_ROOT=app.isPackaged?path.join(app.getPath('userData'),'diagnostics'):ROOT;
+fs.mkdirSync(DATA_ROOT,{recursive:true});
 require('./tools/spectrum-service')({app,ipcMain,root:ROOT});
 const layoutStore=require('./tools/layout-store')(path.join(app.getPath('userData'),'desktop-layout.json'));
 const displayLayout=require('./tools/display-layout');
@@ -16,7 +22,7 @@ let layoutIdentities=new Map();
 const layoutBackups=require('./tools/layout-backups')(path.join(app.getPath('userData'),'layout-backups'),layoutStore);
 let layoutEpoch=0,layoutBackupTimer;
 if(Object.keys(layoutStore.read()).length){try{layoutBackups.save('startup');}catch(e){console.error('Startup backup failed:',e.message);}}
-const auditLayout=require('./tools/layout-audit')(path.join(ROOT,'layout-startup-audit.json'),layoutStore);
+const auditLayout=require('./tools/layout-audit')(path.join(DATA_ROOT,'layout-startup-audit.json'),layoutStore);
 ipcMain.on('layout:sync',(event,values,seed,epoch)=>{try{
  if(!seed&&epoch!==layoutEpoch)throw Error('布局已恢复，请等待界面重新载入');
  const before=JSON.stringify(layoutStore.read());
@@ -69,7 +75,7 @@ let desktopPoll;
 const rendererHealth=new Map();
 let healthTimer,guardReady=false;
 function failure(reason){
- try{fs.appendFileSync(path.join(ROOT,'desktop-failures.log'),`${new Date().toISOString()} ${reason}\n`);}catch(_){}
+ try{fs.appendFileSync(path.join(DATA_ROOT,'desktop-failures.log'),`${new Date().toISOString()} ${reason}\n`);}catch(_){}
  restoreAndQuit();
 }
 async function applyWhenReady(){
@@ -79,7 +85,7 @@ async function applyWhenReady(){
  const result=await styleApplication;systemStyled=result.ok;
  if(quitting||rebuilding)return;
  if(!result.ok){failure('System style failed: '+result.message);return;}
- fs.writeFileSync(path.join(ROOT,'desktop-ready.json'),JSON.stringify({pid:process.pid,time:new Date().toISOString(),screens:desktopWindows.size,ready:true}));
+ fs.writeFileSync(path.join(DATA_ROOT,'desktop-ready.json'),JSON.stringify({pid:process.pid,time:new Date().toISOString(),screens:desktopWindows.size,ready:true}));
   const rendererLayouts=await Promise.all([...desktopWindows.values()].map(w=>w.webContents.executeJavaScript('({display:displayId,key:layoutKey("hive-grid-placements"),placements:preferredPlacements})').catch(e=>({error:e.message}))));
   auditLayout('ready',screen.getAllDisplays().map(d=>({id:d.id,label:d.label,bounds:d.bounds,scaleFactor:d.scaleFactor})),rendererLayouts);
 }
@@ -147,6 +153,7 @@ function isHiveLauncher(file){
  if(path.extname(file).toLowerCase()!=='.lnk')return false;
  try{
   const link=shell.readShortcutLink(file),launcher=path.join(ROOT,'启动玻璃蜂窝桌面.vbs').toLowerCase();
+  if(app.isPackaged&&path.resolve(link.target).toLowerCase()===process.execPath.toLowerCase())return true;
   if(path.resolve(link.target).toLowerCase()===launcher)return true;
   return /^wscript\.exe$|^cscript\.exe$/i.test(path.basename(link.target))&&String(link.args||'').trim().replace(/^"|"$/g,'').toLowerCase()===launcher;
  }catch{return false;}
@@ -280,7 +287,7 @@ function createWindow(display = screen.getPrimaryDisplay()) {
       execFile('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(ROOT,'tools','attach-desktop.ps1'), '-WindowHandle', handle,'-X',String(physical.x),'-Y',String(physical.y),'-Width',String(physical.width),'-Height',String(physical.height)],
         { windowsHide:true, timeout:10000 }, (error, stdout, stderr) => resolve({ok:!error, parent:stdout?.trim(), error:stderr}));
     });
-    fs.writeFileSync(path.join(ROOT,'desktop-host-status.json'), JSON.stringify(attached));
+    fs.writeFileSync(path.join(DATA_ROOT,'desktop-host-status.json'), JSON.stringify(attached));
     if (win.isDestroyed()) return;
     if (!attached.ok) { failure('Desktop attachment failed: '+JSON.stringify(attached)); return; }
     win.desktopAttached=true;
@@ -396,7 +403,7 @@ ipcMain.handle('desktop:open', async (_event, id) => {
   const target = itemMap.get(String(id));
   if (!target || (!systemTargets.has(target)&&!desktopRoots.some(root => isInside(target, root)))) return { ok: false, message: '项目已失效，请刷新桌面。' };
   const result=await new Promise(resolve=>execFile('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(ROOT,'tools','open-desktop-item.ps1'),'-ItemPath',target],{windowsHide:true,timeout:15000,encoding:'utf8'},(error,out)=>{try{resolve(JSON.parse(out));}catch(_){resolve({ok:false,message:error?.message||'系统未返回启动结果'});}}));
-  fs.appendFileSync(path.join(ROOT,'item-open.log'),JSON.stringify({time:new Date().toISOString(),id,result})+'\n');return result;
+  fs.appendFileSync(path.join(DATA_ROOT,'item-open.log'),JSON.stringify({time:new Date().toISOString(),id,result})+'\n');return result;
 });
 ipcMain.handle('desktop:reveal', async (_event, id) => {
   const target = itemMap.get(String(id));
@@ -431,7 +438,7 @@ async function gameWindowMode(event,release=false){
 }
 ipcMain.handle('game:focus',event=>gameWindowMode(event));
 const notesFocus=require('./tools/notes-focus')(path.join(ROOT,'tools','focus-game.ps1'));
-app.whenReady().then(()=>notesFocus.start());app.on('will-quit',()=>notesFocus.stop());process.once('exit',()=>notesFocus.stop());
+app.whenReady().then(()=>{if(!packageSmoke)notesFocus.start();});app.on('will-quit',()=>notesFocus.stop());process.once('exit',()=>notesFocus.stop());
 ipcMain.handle('notes:focus',async event=>{const win=BrowserWindow.fromWebContents(event.sender);if(!win||win.isDestroyed())return {ok:false};const started=Date.now();let result=await notesFocus.request(win.getNativeWindowHandle().readBigUInt64LE().toString(),'desktop');if(!win.isDestroyed()){win.webContents.focus();if(!result.ok){await new Promise(resolve=>setTimeout(resolve,40));result=await notesFocus.request(win.getNativeWindowHandle().readBigUInt64LE().toString(),'desktop');}}win.lastNotesFocusMs=Date.now()-started;win.lastNotesFocusResult=result;return result;});
 ipcMain.handle('notes:release',()=>({ok:true}));
 ipcMain.handle('game:release',event=>gameWindowMode(event,true));
@@ -521,7 +528,7 @@ async function restoreAndQuit() {
   desktopWatchers.forEach(watcher=>watcher.close());
   let restored=false;
   for(let attempt=0;attempt<3;attempt++){const result=await ps('Restore');if(result.ok){restored=true;break;}await new Promise(resolve=>setTimeout(resolve,1000));}
-  try{fs.writeFileSync(path.join(ROOT,'desktop-ready.json'),JSON.stringify({pid:process.pid,time:new Date().toISOString(),ready:false,restored}));}catch{}
+  try{fs.writeFileSync(path.join(DATA_ROOT,'desktop-ready.json'),JSON.stringify({pid:process.pid,time:new Date().toISOString(),ready:false,restored}));}catch{}
   app.exit(0);
 }
 
@@ -529,13 +536,22 @@ if (!app.requestSingleInstanceLock()) {
   // A secondary launch must not run desktop restoration belonging to the owner.
   app.exit(0);
 } else {
-app.on('second-instance', () => {});
+app.on('second-instance', (_event,args) => {if(args.includes('--setup'))dialog.showMessageBox({message:'请先退出蜂巢桌面，再从开始菜单打开 Setup 调整启动选项。'});});
 app.whenReady().then(async()=>{
+  if(packageSmoke){
+    await require('./tools/package-smoke')({app,root:ROOT,execFile});
+    app.exit(0);return;
+  }
+  if(app.isPackaged){
+    if(process.argv.includes('--startup'))await new Promise(resolve=>setTimeout(resolve,15000));
+    const proceed=await require('./tools/first-run')({app,dialog,execFile,root:ROOT});
+    if(!proceed){app.exit(0);return;}
+  }
   const initialRestore=await ps('Restore');if(!initialRestore.ok)throw Error('Initial desktop restoration failed: '+initialRestore.message);
   const heartbeat=path.join(app.getPath('userData'),`heartbeat-${process.pid}.txt`);
   fs.writeFileSync(heartbeat,String(Date.now()));
   const quote=s=>"'"+s.replace(/'/g,"''")+"'";
-  const guardArgs=`-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${path.join(ROOT,'tools','watchdog.ps1')}" -OwnerId ${process.pid} -Heartbeat "${heartbeat}"`;
+  const guardArgs=`-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${path.join(ROOT,'tools','watchdog.ps1')}" -OwnerId ${process.pid} -Heartbeat "${heartbeat}" -ExecutablePath "${process.execPath}"`;
   const guardCommand=`Start-Process -FilePath powershell.exe -ArgumentList ${quote(guardArgs)} -WindowStyle Hidden`;
   execFile('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(guardCommand,'utf16le').toString('base64')],{windowsHide:true},e=>{if(e)failure('Watchdog launch failed: '+e.message);});
   const guardDeadline=Date.now()+10000;
@@ -561,7 +577,7 @@ app.whenReady().then(async()=>{
     desktopWindows.clear();
     layoutIdentities=displayLayout.identify(screen.getAllDisplays());
     displayLayout.migrate(layoutStore,layoutIdentities);
-    fs.writeFileSync(path.join(ROOT,'display-layout-diagnostics.json'),JSON.stringify(screen.getAllDisplays().map(d=>({id:d.id,layoutId:layoutIdentities.get(String(d.id)),label:d.label,internal:d.internal,bounds:d.bounds})),null,2));
+    fs.writeFileSync(path.join(DATA_ROOT,'display-layout-diagnostics.json'),JSON.stringify(screen.getAllDisplays().map(d=>({id:d.id,layoutId:layoutIdentities.get(String(d.id)),label:d.label,internal:d.internal,bounds:d.bounds})),null,2));
     for(const display of screen.getAllDisplays())createWindow(display);
     broadcastIslands();
     rebuilding=false;
@@ -571,7 +587,7 @@ app.whenReady().then(async()=>{
   const schedule=()=>{clearTimeout(topologyTimer);topologyTimer=setTimeout(()=>{if(rebuilding){schedule();return;}rebuild().catch(e=>failure(e.stack));},800);};
   screen.on('display-added',schedule);screen.on('display-removed',schedule);screen.on('display-metrics-changed',schedule);
   for(const event of ['display-added','display-removed','display-metrics-changed'])screen.on(event,()=>auditLayout(event,screen.getAllDisplays().map(d=>({id:d.id,label:d.label,bounds:d.bounds,scaleFactor:d.scaleFactor}))));
-}).catch(e=>failure(e.stack));
+}).catch(e=>{if(packageSmoke){console.error(e);app.exit(1);}else failure(e.stack);});
 process.on('uncaughtException',e=>failure(e.stack));
 process.on('unhandledRejection',e=>failure(String(e?.stack||e)));
 app.on('before-quit', (event) => {

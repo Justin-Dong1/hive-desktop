@@ -1,0 +1,48 @@
+appId: com.justindong.hivedesktop
+productName: 蜂巢桌面
+asar: false
+directories:
+  output: dist
+  buildResources: build
+files:
+  - main.js
+  - preload.js
+  - package.json
+  - ui/**
+  - tools/*.js
+  - tools/*.ps1
+  - tools/*.cs
+  - '!tools/test-*'
+  - '!tools/verify-*'
+  - '!tools/capture-*'
+  - '!tools/launch.ps1'
+  - '!tools/install-startup.ps1'
+  - '!tools/build-spectrum.ps1'
+  - '!tools/build-icon.ps1'
+  - '!tools/prepare-release.ps1'
+  - '!tools/release-checksum.js'
+  - '!tools/publish-draft.js'
+  - taskbar-policy.json
+  - THIRD_PARTY_NOTICES.md
+  - vendor/NAudio-1.10/NAudio.dll
+  - vendor/NAudio-1.10/HiveSpectrum.exe
+  - vendor/NAudio-1.10/LICENSE.txt
+win:
+  executableName: HiveDesktop
+  icon: build/hive.ico
+  target:
+    - target: nsis
+      arch: [x64]
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: 蜂巢桌面
+  runAfterFinish: false
+  deleteAppDataOnUninstall: false
+  include: build/installer.nsh
+  artifactName: HiveDesktop-Setup-${version}-${arch}.${ext}
+publish: null

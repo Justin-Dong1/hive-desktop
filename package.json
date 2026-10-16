@@ -1,14 +1,18 @@
 {
   "name": "glass-hive-desktop",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "Transparent honeycomb desktop shell for Windows 11 and Wallpaper Engine",
+  "description": "Hive Desktop for Windows 11, with optional Wallpaper Engine integration",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "check": "node --check main.js && node --check preload.js"
+    "check": "node --check main.js && node --check preload.js",
+    "prepare:release": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/prepare-release.ps1",
+    "pack": "pnpm run prepare:release && electron-builder --dir --win --x64 --publish never",
+    "dist": "pnpm run prepare:release && electron-builder --win --x64 --publish never"
   },
   "devDependencies": {
-    "electron": "^39.2.7"
+    "electron": "^39.2.7",
+    "electron-builder": "26.15.3"
   }
 }

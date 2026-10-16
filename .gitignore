@@ -15,6 +15,10 @@
 !/恢复系统桌面.vbs
 !/ui/
 !/tools/
+!/electron-builder.yml
+!/build/
+!/docs/
+!/build/hive.ico
 /tools/verify-*
 /tools/capture-*
 /tools/test-menu-click.ps1

@@ -1,6 +1,6 @@
-param([int]$OwnerId,[string]$Heartbeat)
+param([int]$OwnerId,[string]$Heartbeat,[string]$ExecutablePath)
 $ErrorActionPreference='SilentlyContinue'
-Start-Transcript -Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'watchdog.log') -Append | Out-Null
+Start-Transcript -Path (Join-Path (Split-Path $Heartbeat -Parent) 'watchdog.log') -Append | Out-Null
 Write-Output "Watchdog requested: owner=$OwnerId heartbeat=$Heartbeat"
 $owner=Get-Process -Id $OwnerId
 $started=if($owner){$owner.StartTime}else{$null}
@@ -25,11 +25,11 @@ while($owner){
   break
  }
 }
-$hiveExe=Join-Path (Split-Path $PSScriptRoot -Parent) 'node_modules\electron\dist\electron.exe'
-$replacement=Get-CimInstance Win32_Process -Filter "Name = 'electron.exe'" | Where-Object { $_.ProcessId -ne $OwnerId -and $_.ExecutablePath -eq $hiveExe -and $_.CommandLine -notmatch '--type=' }
+$hiveExe=if($ExecutablePath){$ExecutablePath}else{Join-Path (Split-Path $PSScriptRoot -Parent) 'node_modules\electron\dist\electron.exe'}
+$replacement=Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $OwnerId -and $_.ExecutablePath -eq $hiveExe -and $_.CommandLine -notmatch '--type=' }
 if(-not $replacement){
  for($attempt=0;$attempt -lt 20;$attempt++){
-  $replacement=Get-CimInstance Win32_Process -Filter "Name = 'electron.exe'" | Where-Object { $_.ProcessId -ne $OwnerId -and $_.ExecutablePath -eq $hiveExe -and $_.CommandLine -notmatch '--type=' }
+  $replacement=Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $OwnerId -and $_.ExecutablePath -eq $hiveExe -and $_.CommandLine -notmatch '--type=' }
   if($replacement){break}
   try{& (Join-Path $PSScriptRoot 'system-style.ps1') -Mode Restore;break}catch{Write-Output "Recovery retry: $_";Start-Sleep -Seconds 3}
  }
