@@ -53,11 +53,13 @@ Windows 11 透明蜂窝桌面层，保留 Explorer、原生任务栏和当前壁
 
 **Wallpaper Engine 不是必需依赖。** 未安装或未运行、且没有播放音乐时，使用 Windows 当前壁纸，收起的长条只显示时间，点击仍可打开功能面板。本项目不包含壁纸文件或音乐软件。
 
+已有首次设置记录时会沿用本机配置，不会自动重复弹出向导，可通过开始菜单 Setup 重设。新用户选择自己的 Wallpaper 安装路径，不要求与开发者相同；目前不自动搜索目录，移动程序后需要重新选择。个人路径不会随安装包分发。
+
 ## 开发者专用：源码安装与运行
 
 以下仅供源码运行或开发使用。
 
-环境：Windows 11 x64、正常运行的 Explorer、Windows PowerShell 5.1、Node.js 22/24、pnpm 10。开发机使用 Node.js 24；其他 Windows 版本未验证。无需管理员权限。首次安装需联网下载 Electron，当前提供源码而非独立安装包。
+环境：Windows 11 x64、正常运行的 Explorer、Windows PowerShell 5.1、Node.js 22/24、pnpm 10。开发机使用 Node.js 24；其他 Windows 版本未验证。无需管理员权限。源码安装首次需联网下载 Electron；普通用户请使用上面的独立安装包。
 
 有仓库访问权限的账户可下载 ZIP 并解压，或使用 Git：
 

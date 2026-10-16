@@ -21,7 +21,7 @@ foreach ($folder in @('Desktop', 'Startup')) {
     $link.Arguments = '"' + $launcher + '"'
     if ($folder -eq 'Startup') { $link.Arguments += ' --startup' }
     $link.WorkingDirectory = $hiveRoot
-    $link.IconLocation = (Join-Path $env:WINDIR 'System32\imageres.dll') + ',110'
+    $link.IconLocation = (Join-Path $hiveRoot 'build\hive.ico') + ',0'
     $link.Description = 'HIVE DESKTOP - start desktop and Wallpaper Engine'
     $link.WindowStyle = 7
     $link.Save()
