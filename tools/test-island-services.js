@@ -14,4 +14,4 @@ try{
  assert.strictEqual(boot()['notes:list']().notes.length,0);
  fs.writeFileSync(path.join(temp,'island-notes.json'),'broken-json');h=boot();assert(!h['notes:list']().ok);assert(!h['notes:write'](null,{action:'add'}).ok);assert.strictEqual(fs.readFileSync(path.join(temp,'island-notes.json'),'utf8'),'broken-json');
  console.log('PASS: add, edit, persist/reload, conflict, size-limit, delete, corrupt-file protection');
-}finally{fs.unlinkSync(path.join(temp,'island-notes.json'));fs.rmdirSync(temp);}
+}finally{for(const name of ['island-notes.json','island-notes.json.bak']){const file=path.join(temp,name);if(fs.existsSync(file))fs.unlinkSync(file);}if(!fs.readdirSync(temp).length)fs.rmdirSync(temp);}

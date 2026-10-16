@@ -15,11 +15,13 @@ const root=path.join(__dirname,'..'),repo='Justin-Dong1/hive-desktop';
  const version=require('../package.json').version,tag=`v${version}-beta.1`;
  const releases=await api('/releases');const existing=releases.find(r=>r.tag_name===tag);
  const sha=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();
+ const manifest=JSON.parse(fs.readFileSync(path.join(root,'dist','release-manifest.json'),'utf8'));
+ if(manifest.commit!==sha||manifest.version!==version)throw Error('Build does not match current commit/version');
  if(existing&&(!existing.draft||existing.target_commitish!==sha))throw Error('Existing release does not match this draft/commit; inspect before updating');
  const release=existing||await api('/releases','POST',{tag_name:tag,target_commitish:sha,name:`蜂巢桌面 ${version} · 安装测试版`,draft:true,prerelease:true,body:'Windows x64 安装测试版，无需 Node.js/pnpm。Wallpaper Engine 可选，内置频谱组件。\n\n首次引导支持登录启动和壁纸关联；布局和便签保留。\n\n注意：未代码签名，未完成真实安装/覆盖升级/卸载验收。请先在测试环境验证，再决定发布。请核对 SHA256SUMS.txt。\n\n详细验收范围见仓库 docs/INSTALLER-TESTING.md。'});
  console.log(JSON.stringify({draftId:release.id,assets:release.assets.map(a=>({name:a.name,size:a.size,state:a.state})),url:release.html_url}));
  if(process.argv.includes('--inspect'))return;
- for(const name of [`HiveDesktop-Setup-${version}-x64.exe`,'SHA256SUMS.txt']){
+ for(const name of [`HiveDesktop-Setup-${version}-x64.exe`,'SHA256SUMS.txt','release-manifest.json']){
   const body=fs.readFileSync(path.join(root,'dist',name)),assetHash='sha256:'+require('crypto').createHash('sha256').update(body).digest('hex');
   const prior=release.assets.find(a=>a.name===name);
   if(prior){if(prior.state==='uploaded'&&prior.digest===assetHash){console.log('Already verified: '+name);continue;}throw Error('Existing asset requires inspection: '+name);}

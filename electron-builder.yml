@@ -1,6 +1,7 @@
 appId: com.justindong.hivedesktop
 productName: 蜂巢桌面
 asar: false
+afterPack: ./tools/release-audit.cjs
 directories:
   output: dist
   buildResources: build

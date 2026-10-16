@@ -50,8 +50,8 @@ function itemMenu(item,x,y){
   const change=async reset=>{const r=await window.glassHive.changeIcon(item.id,reset);if(!r.ok&&!r.canceled)toast(r.message);};
   action('选择自定义图标…',()=>change(false));action('恢复默认图标',()=>change(true));
   const style=HiveIconFill.mode(item,sharedRead('hive-icon-fit'));
-  for(const [value,label]of [['inner','内圆留白'],['contain','保留原图'],['cover','填满圆框']])action(`${style===value?'✓ ':''}图标样式：${label}`,()=>{const preferences=sharedRead('hive-icon-fit');preferences[item.id]=value;storedWrite('hive-icon-fit',JSON.stringify(preferences));render();});
-  action('图标样式：恢复自动适配',()=>{const preferences=sharedRead('hive-icon-fit');delete preferences[item.id];storedWrite('hive-icon-fit',JSON.stringify(preferences));render();});
+  for(const [value,label]of [['inner','内圆裁切（原图颜色）'],['contain','保留原图形态']])action(`${style===value?'✓ ':''}图标样式：${label}`,()=>{const preferences=sharedRead('hive-icon-fit');preferences[item.id]=value;storedWrite('hive-icon-fit',JSON.stringify(preferences));render();});
+  action('图标样式：恢复默认内圆',()=>{const preferences=sharedRead('hive-icon-fit');delete preferences[item.id];storedWrite('hive-icon-fit',JSON.stringify(preferences));render();});
  }
  menu.hidden=false;menu.style.left=`${Math.max(8,Math.min(x,innerWidth-menu.offsetWidth-8))}px`;menu.style.top=`${Math.max(8,Math.min(y,innerHeight-menu.offsetHeight-8))}px`;
 }

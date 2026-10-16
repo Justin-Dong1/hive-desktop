@@ -233,12 +233,12 @@ async function scanDesktop() {
 }
 
 function wallpaperEngineStatus() {
-  return new Promise((resolve) => {
-    execFile('tasklist.exe', ['/FI', 'IMAGENAME eq wallpaper*.exe', '/FO', 'CSV', '/NH'],
+  return Promise.all(['wallpaper32.exe','wallpaper64.exe'].map(name=>new Promise((resolve) => {
+    execFile('tasklist.exe', ['/FI', `IMAGENAME eq ${name}`, '/FO', 'CSV', '/NH'],
       { windowsHide: true, timeout: 3000 }, (error, stdout) => {
         resolve(!error && /wallpaper(?:32|64)\.exe/i.test(stdout || ''));
       });
-  });
+  }))).then(results=>results.some(Boolean));
 }
 
 function createWindow(display = screen.getPrimaryDisplay()) {
