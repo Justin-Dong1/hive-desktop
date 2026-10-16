@@ -1,0 +1,14 @@
+const assert=require('assert'),{timeline,format}=require('../ui/media-timeline');
+const sample={position:30,duration:180,playing:true,updated:100000,controls:{start:0,rate:1,seek:true,minSeek:0,maxSeek:180}};
+assert.strictEqual(timeline(sample,105000).elapsed,35);
+assert.strictEqual(timeline({...sample,playing:false},105000).elapsed,30);
+assert.strictEqual(timeline({...sample,controls:{...sample.controls,rate:2}},105000).elapsed,40);
+assert.strictEqual(timeline({...sample,updated:-11644473600000},105000).elapsed,30);
+assert.strictEqual(timeline({...sample,duration:0},105000).valid,false);
+assert.strictEqual(timeline(sample,999999).elapsed,180);
+assert.strictEqual(timeline({...sample,controls:{...sample.controls,seek:false}},105000).canSeek,false);
+assert.strictEqual(timeline({...sample,controls:{...sample.controls,minSeek:20,maxSeek:100}},105000).max,100);
+assert.strictEqual(timeline({...sample,controls:{...sample.controls,start:20}},105000).elapsed,15);
+assert.strictEqual(format(3661),'1:01:01');assert.strictEqual(format(65),'1:05');
+assert.strictEqual(timeline(null).valid,false);
+console.log('PASS: progress, pause, rate, missing timestamp, unknown duration, bounds, capabilities, formatting');

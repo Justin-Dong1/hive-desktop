@@ -1,0 +1,16 @@
+'use strict';
+const assert=require('assert'),fs=require('fs'),os=require('os'),path=require('path'),Store=require('./layout-store'),Backups=require('./layout-backups');
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'hive-backups-')),file=path.join(dir,'layout.json'),store=Store(file),backups=Backups(path.join(dir,'backups'),store);
+const original={'hive-grid-placements:screen-a':'{"one":{"page":0,"key":"2:1"}}','hive-grid-pinned:screen-b':'["1:2"]','hive-island-page:screen-a':'notes','hive-display-assignments':'{"one":"screen-b"}'};
+store.write(original);const saved=backups.save();store.write({'hive-grid-pinned:screen-b':'[]','hive-grid-settings:extra':'{"cell":120}'});
+backups.restore(backups.selected(saved.id));assert.deepStrictEqual(store.read(),original);assert.deepStrictEqual(Store(file).read(),original);assert(backups.list().some(b=>b.reason==='before-restore'));
+for(const bad of [{...saved,version:99},{...saved,values:{'hive-note-draft:x':'{}'}},{...saved,values:{'hive-grid-placements:a':'{"x":{"page":-1,"key":"bad"}}'}},{...saved,values:{}}])assert.throws(()=>backups.restore(bad));
+assert.deepStrictEqual(store.read(),original);assert.throws(()=>backups.selected('../layout.json'));
+console.log('PASS version validation, two-screen exact restore, recovery backup, durable reopen, invalid import rejection, path traversal rejection, notes excluded');
+const exportFile=path.join(dir,'backups','用户导出.json');fs.writeFileSync(exportFile,JSON.stringify(saved));
+const recent=[];for(let i=0;i<15;i++)recent.push(backups.save(['auto','manual','startup','before-restore'][i%4]).id);
+assert.deepStrictEqual(backups.list().map(b=>b.id),recent.slice(-10).reverse());assert(fs.existsSync(exportFile));assert(!fs.existsSync(path.join(dir,'backups',saved.id)));
+for(let i=1;i<=3;i++)fs.writeFileSync(path.join(dir,'backups',i+'-abc.json'),JSON.stringify(saved));
+const reopened=Backups(path.join(dir,'backups'),store);assert.deepStrictEqual(reopened.list().map(b=>b.id),recent.slice(-10).reverse());
+reopened.restore(reopened.selected(recent[5]));assert.equal(reopened.list().length,10);assert.equal(reopened.list()[0].reason,'before-restore');assert.deepStrictEqual(store.read(),original);
+console.log('PASS latest 10 across all types, same-millisecond ordering, startup cleanup, export preserved, oldest-backup restore');

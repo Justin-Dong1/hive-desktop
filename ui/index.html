@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>蜂巢桌面 · HIVE DESKTOP</title>
+  <link rel="stylesheet" href="island-pages.css">
+  <style>
+    :root {
+      color-scheme: dark;
+      --glass: rgba(34, 38, 44, .42);
+      --glass-strong: rgba(28, 31, 36, .76);
+      --line: rgba(255, 255, 255, .20);
+      --line-soft: rgba(255, 255, 255, .105);
+      --white: #f5f7f9;
+      --muted: rgba(238, 242, 246, .64);
+      --shadow: 0 18px 50px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.16);
+      --cell: 126px;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; }
+    body { font-family: "Segoe UI Variable Text", "Microsoft YaHei UI", sans-serif; color: var(--white); user-select: none; }
+    button { font: inherit; color: inherit; }
+
+    #ambient {
+      position: fixed; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(600px 400px at 50% -10%, rgba(255,255,255,.10), transparent 68%),
+        linear-gradient(90deg, rgba(0,0,0,.08), transparent 20%, transparent 80%, rgba(0,0,0,.08));
+    }
+
+    .brand {
+      position: fixed; left: 28px; top: 24px; z-index: 10; display: flex; align-items: center; gap: 11px;
+      font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.78);
+      text-shadow: 0 2px 12px rgba(0,0,0,.7); pointer-events: none;
+    }
+    .brand-mark { width: 18px; height: 18px; border: 1px solid rgba(255,255,255,.5); transform: rotate(30deg); border-radius: 5px; position: relative; }
+    .brand-mark::after { content:""; position:absolute; inset:4px; border:1px solid rgba(255,255,255,.8); border-radius:2px; }
+    .brand small { display:block; margin-top:3px; letter-spacing:.09em; font-size:8px; color:rgba(255,255,255,.43); }
+
+    #island {
+      position: fixed; left: 50%; top: 12px; translate: -50% 0; width: 292px; height: 48px; z-index: 50;
+      border-radius: 25px; overflow: hidden; color: white; cursor: pointer;
+      background: linear-gradient(135deg,rgba(48,52,58,.88),rgba(10,12,15,.9)); border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 16px 45px rgba(0,0,0,.38), inset 0 1px rgba(255,255,255,.12);
+      transition: width .36s cubic-bezier(.2,.8,.2,1), height .36s cubic-bezier(.2,.8,.2,1), border-radius .3s ease, background .3s;
+      backdrop-filter: none; isolation: isolate; transform: translateZ(0);
+    }
+    #island.open { width: min(620px, calc(100vw - 56px)); height: 290px; border-radius: 30px; background: rgba(14,16,19,.91); }
+    .island-compact { height: 46px; display:flex; align-items:center; padding:0 16px; gap:11px; }
+    .pulse { width:8px; height:8px; border-radius:50%; background:#d8dce0; box-shadow:0 0 14px rgba(255,255,255,.7); }
+    .pulse.on { background:#9fffc9; box-shadow:0 0 15px rgba(111,255,178,.85); }
+    .island-title { flex:1; min-width:0; font-size:12px; font-weight:650; letter-spacing:.04em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .island-clock { font-size:12px; font-variant-numeric: tabular-nums; color:rgba(255,255,255,.72); }
+    .chevron { width:18px; height:18px; display:grid; place-items:center; color:rgba(255,255,255,.5); transition:transform .3s; }
+    #island.open .chevron { transform:rotate(180deg); }
+    .island-panel { opacity:0; transform:translateY(-8px); pointer-events:none; padding:10px 18px 18px; transition:.2s; }
+    #island.open .island-panel { opacity:1; transform:none; pointer-events:auto; transition-delay:.10s; }
+    .overview { display:grid; grid-template-columns:1.4fr .8fr .8fr; gap:10px; }
+    .metric { min-height:76px; padding:14px; border:1px solid rgba(255,255,255,.09); border-radius:18px; background:rgba(255,255,255,.055); }
+    .metric-label { font-size:9px; letter-spacing:.14em; color:rgba(255,255,255,.48); text-transform:uppercase; }
+    .metric-value { margin-top:8px; font-size:20px; font-weight:650; letter-spacing:-.03em; }
+    .metric-value.small { font-size:14px; margin-top:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .actions { display:flex; gap:8px; margin-top:10px; }
+    .action { flex:1; border:1px solid rgba(255,255,255,.11); background:rgba(255,255,255,.065); border-radius:14px; padding:10px 12px; cursor:pointer; font-size:11px; }
+    .action:hover { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.22); }
+    .action.danger:hover { color:#ffd2d2; background:rgba(255,90,90,.12); }
+
+    #stage { position:fixed; inset:70px 12px 10px; overflow:hidden; }
+    #hive { position:absolute; inset:0; transform-origin:0 0; will-change:transform; }
+    #connections { position:absolute; overflow:visible; pointer-events:none; }
+    #connections polygon { fill:rgba(25,29,34,.20); stroke:rgba(255,255,255,.11); stroke-width:1; vector-effect:non-scaling-stroke; }
+    #connections polygon.occupied { fill:rgba(28,32,38,.38); stroke:rgba(255,255,255,.18); }
+    #connections path { fill:none; stroke:rgba(255,255,255,.13); stroke-width:1; vector-effect:non-scaling-stroke; }
+
+    .cell { position:absolute; width:var(--cell); height:calc(var(--cell) * .866); translate:-50% -50%; cursor:default; }
+    .cell-hit { position:absolute; inset:4px; clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%); display:flex; align-items:center; justify-content:center; }
+    .app { width:78px; display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer; filter:drop-shadow(0 9px 16px rgba(0,0,0,.30)); transition:transform .18s ease; }
+    .app { position:relative; height:54px; }
+    .app:hover .icon-ring { border-color:rgba(255,255,255,.8); }
+    .app:active .icon-ring { opacity:.8; }
+    .app .label { position:absolute; top:61px; left:50%; transform:translateX(-50%); margin:0; }
+    .icon-ring { width:54px; height:54px; border-radius:50%; display:grid; place-items:center; overflow:hidden; background:rgba(235,239,242,.18); border:0; box-shadow:0 8px 18px rgba(0,0,0,.28); }
+    .app.selected .icon-ring { border-color:rgba(255,255,255,.9); box-shadow:0 0 0 4px rgba(255,255,255,.14), 0 10px 22px rgba(0,0,0,.4); }
+    .icon-ring img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+    .icon-ring { position:relative; }
+    .icon-ring::after { content:''; position:absolute; inset:0; border:1px solid rgba(230,243,255,.55); border-radius:50%; pointer-events:none; }
+    .app:hover .icon-ring::after,.app.selected .icon-ring::after { border-color:rgba(255,255,255,.95); }
+    .icon-ring img[data-icon-style="inner"] { width:82%; height:82%; border-radius:50%; }
+    .icon-ring img[data-icon-style="contain"] { width:70%; height:70%; border-radius:0; }
+    .fallback { width:100%; height:100%; display:grid; place-items:center; font-size:16px; font-weight:700; letter-spacing:-.04em; color:#f4f6f8; background:linear-gradient(145deg,rgba(255,255,255,.24),rgba(82,88,97,.55)); }
+    .label { width:106px; margin-left:-14px; margin-right:-14px; text-align:center; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:10px; line-height:1.2; color:rgba(255,255,255,.92); text-shadow:0 1px 4px #000,0 2px 10px #000; }
+    body.labels-hover .label { opacity:0; transition:.2s; }
+    body.labels-hover .app:hover .label { opacity:1; }
+    body.labels-hidden #cells .app .label { display:none; }
+
+    #empty { position:fixed; left:50%; top:50%; translate:-50% -50%; display:none; text-align:center; padding:26px 32px; border-radius:24px; background:var(--glass-strong); border:1px solid var(--line); box-shadow:var(--shadow); }
+    #empty b { display:block; font-size:16px; margin-bottom:8px; }
+    #empty span { color:var(--muted); font-size:12px; }
+    #loading { position:fixed; left:50%; top:50%; translate:-50% -50%; z-index:70; border-radius:30px; padding:13px 19px; font-size:11px; letter-spacing:.08em; background:rgba(12,14,17,.84); border:1px solid rgba(255,255,255,.14); backdrop-filter:blur(20px); box-shadow:var(--shadow); }
+    #toast { position:fixed; left:50%; bottom:28px; translate:-50% 20px; opacity:0; pointer-events:none; padding:10px 16px; border-radius:14px; background:rgba(15,17,20,.86); border:1px solid rgba(255,255,255,.13); backdrop-filter:blur(22px); font-size:11px; transition:.25s; z-index:80; }
+    #toast.show { opacity:1; translate:-50% 0; }
+    .size-control { display:flex; align-items:center; gap:12px; margin-top:14px; font-size:11px; }
+    .size-control input { flex:1; min-width:40px; accent-color:#d4dbe3; }
+    .size-control output { min-width:90px; text-align:right; color:var(--muted); }
+    .cell { touch-action:none; cursor:grab; }
+    .cell.dragging { z-index:5; background:rgba(120,135,150,.35); clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%); cursor:grabbing; }
+    #connections polygon.drop-target { fill:rgba(190,220,255,.35); stroke:rgba(255,255,255,.9); stroke-width:2; }
+    .cell-hit { clip-path:none; }
+    .app .label { width:90px; }
+    @media (max-width:800px) { :root{--cell:108px}.brand{display:none}.overview{grid-template-columns:1fr 1fr}.metric:first-child{grid-column:1/-1} }
+    #stage { inset:0; }
+    #connections { left:0; top:0; pointer-events:none; }
+    #connections polygon { opacity:0; pointer-events:none; }
+    #connections polygon.occupied, #connections polygon.pinned { opacity:1; pointer-events:all; }
+    .grid-drag #connections polygon, .grid-edit #connections polygon { opacity:1; }
+    .grid-edit #connections polygon { pointer-events:all; cursor:pointer; }
+    .grid-drag #connections polygon.partial, .grid-edit #connections polygon.partial { fill:rgba(210,80,80,.12); stroke:rgba(255,120,120,.4); stroke-dasharray:4 4; }
+    #connections polygon.pinned { stroke:rgba(170,220,240,.65); }
+    #connections polygon.drop-target { opacity:1; }
+    .cell { height:calc(var(--cell) * .8660254); display:grid; place-items:center; pointer-events:none; }
+    .app { width:var(--icon); height:var(--icon); pointer-events:auto; cursor:grab; }
+    .icon-ring { width:var(--icon); height:var(--icon); flex-shrink:0; }
+    .app .label { top:calc(var(--icon) + 4px); width:calc(var(--cell) * .70); font-size:11px; }
+    .cell.dragging { clip-path:none; background:transparent; }
+    #island.open { height:430px; max-height:calc(100vh - 24px); overflow-y:auto; }
+    .grid-controls { display:flex; gap:7px; align-items:center; margin-top:12px; font-size:11px; }
+    .grid-controls button { border:1px solid #ffffff25; border-radius:9px; padding:7px 11px; background:#ffffff10; cursor:pointer; }
+    .grid-controls button:disabled { opacity:.3; }
+    #offsetValue { color:var(--muted); }
+    .control-note { font-size:11px; color:var(--muted); margin-top:10px; line-height:1.5; }
+    #island { transition:left .24s cubic-bezier(.22,.72,.24,1),top .24s cubic-bezier(.22,.72,.24,1),width .22s ease,height .22s ease,border-radius .22s ease; }
+    #island.dot-mode:not(.open) { border-radius:50%; overflow:hidden; }
+    #island.dot-mode:not(.open) .island-compact { width:46px; height:46px; padding:0; justify-content:center; cursor:grab; touch-action:none; }
+    #island.dot-mode:not(.open) .island-title, #island.dot-mode:not(.open) .island-clock, #island.dot-mode:not(.open) .chevron { display:none; }
+    #island.dot-mode:not(.open) .pulse { width:12px; height:12px; }
+    #island.island-moving { transition:none; cursor:grabbing; }
+    #island.island-moving.island-snapped { transition:left .24s cubic-bezier(.22,.72,.24,1),top .24s cubic-bezier(.22,.72,.24,1); }
+    #island.island-snapped { border-color:rgba(160,240,220,.85); box-shadow:0 0 0 3px rgba(160,240,220,.15); }
+    .grid-controls button[aria-pressed="true"] { background:#ffffff30; border-color:#ffffff65; }
+    [hidden] { display:none !important; }
+    #collection { position:fixed; z-index:65; inset:10% 12%; padding:24px; border:1px solid #ffffff40; border-radius:24px; background:rgba(24,28,34,.95); backdrop-filter:blur(24px); display:flex; flex-direction:column; gap:14px; box-shadow:var(--shadow); }
+    #collection header { display:flex; align-items:center; justify-content:space-between; }
+    #collectionCount { font-size:12px; color:var(--muted); }
+    #collectionSearch { padding:10px; border-radius:10px; color:white; background:#ffffff12; border:1px solid #ffffff30; }
+    #collectionList { overflow:auto; min-height:0; }
+    .collection-row { display:flex; gap:12px; align-items:center; padding:7px; border-bottom:1px solid #ffffff12; }
+    #collection button, #itemMenu button { border:1px solid #ffffff20; border-radius:9px; padding:8px 12px; background:#ffffff10; cursor:pointer; }
+    .collection-open { flex:1; min-width:0; display:flex; align-items:center; gap:12px; text-align:left; }
+    .collection-open span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .collection-open img { width:36px; height:36px; object-fit:contain; }
+    .collection-open { touch-action:none; }
+    .collection-ghost { position:fixed; z-index:100; display:flex; align-items:center; gap:8px; pointer-events:none; max-width:240px; padding:12px; border-radius:12px; background:#303b49ee; color:white; }
+    .collection-ghost img { width:36px; height:36px; }
+    #itemMenu { position:fixed; z-index:90; padding:7px; max-height:80vh; overflow:auto; min-width:180px; border:1px solid #ffffff40; border-radius:12px; background:#20252bf5; }
+    #itemMenu button { display:block; width:100%; text-align:left; margin:3px 0; }
+    #newMenu { position:fixed; z-index:91; padding:7px; max-height:85vh; overflow:auto; min-width:220px; border:1px solid #ffffff40; border-radius:12px; background:#20252bf5; }
+    #newMenu button { display:block; width:100%; text-align:left; margin:3px 0; border:1px solid transparent; border-radius:7px; padding:7px 12px; background:transparent; color:inherit; cursor:pointer; }
+    #newMenu button:hover { background:#ffffff20; }
+    #island.portal-hover { border-color:#9fffc9; box-shadow:0 0 0 5px #9fffc955,0 0 35px #9fffc966; }
+    #transfer { position:fixed; z-index:95; left:50%; top:50%; transform:translate(-50%,-50%); width:min(420px,90vw); max-height:80vh; overflow:auto; padding:24px; border-radius:24px; border:1px solid #ffffff44; background:#20252bf5; box-shadow:var(--shadow); }
+    #transferTargets button,#transferCancel { display:block; width:100%; padding:12px; margin-top:12px; border:1px solid #ffffff30; border-radius:12px; background:#ffffff15; cursor:pointer; }
+    #islandScreens { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+    #islandScreens button { font-size:11px; padding:7px; background:#ffffff15; border:1px solid #ffffff30; border-radius:8px; cursor:pointer; }
+    #islandScreens button:disabled { opacity:.4; cursor:not-allowed; }
+  </style>
+</head>
+<body>
+  <div id="ambient"></div>
+  <div class="brand"><span class="brand-mark"></span><div>蜂巢桌面<small>HIVE DESKTOP</small></div></div>
+
+  <style>
+    #island.wallpaper-idle:not(.dot-mode):not(.open) .pulse,
+    #island.wallpaper-idle:not(.dot-mode):not(.open) .island-title,
+    #island.wallpaper-idle:not(.dot-mode):not(.open) .chevron { display: none; }
+    #island.wallpaper-idle:not(.dot-mode):not(.open) .island-compact { justify-content: center; }
+    #island.wallpaper-idle:not(.dot-mode):not(.open) .island-clock { margin: 0; font-size: 18px; }
+  </style>
+  <section id="island" class="wallpaper-idle" aria-expanded="false" aria-label="蜂巢桌面">
+    <div class="island-compact">
+      <span id="pulse" class="pulse"></span>
+      <span id="islandTitle" class="island-title"></span>
+      <span id="clock" class="island-clock">--:--</span>
+      <span class="chevron">⌄</span>
+    </div>
+    <div class="island-panel">
+      <div class="grid-controls"><span>常规形态</span><button id="islandBar" aria-pressed="true">悬浮长条</button><button id="islandDot" aria-pressed="false">悬浮圆点</button></div>
+      <div id="islandScreens" aria-label="各屏蜂巢桌面开关"></div>
+      <div class="overview">
+        <div class="metric"><div class="metric-label">Wallpaper Engine</div><div id="wallpaperMetric" class="metric-value small">检测中</div></div>
+        <div class="metric"><div class="metric-label">桌面项目</div><div id="itemMetric" class="metric-value">—</div></div>
+        <div class="metric"><div class="metric-label">内存</div><div id="memoryMetric" class="metric-value">—</div></div>
+      </div>
+      <div class="actions">
+        <button id="refresh" class="action">刷新图标</button>
+        <button id="recenter" class="action">自动大小</button>
+        <label id="labelSetting" class="size-control">图标下方文字 <select id="labels" aria-label="图标下方文字"><option value="always">始终显示</option><option value="hover">鼠标悬停时显示</option><option value="hidden">隐藏文字</option></select></label>
+        <button id="quit" class="action danger">退出并恢复</button>
+      </div>
+      <label class="size-control" for="sizeSlider">蜂窝宽度 <input id="sizeSlider" type="range" min="100" max="150" value="120" step="2"><output id="sizeValue"></output></label>
+      <label class="size-control" for="iconSlider">图标直径 <input id="iconSlider" type="range" min="28" max="60" value="48" step="2"><output id="iconValue"></output></label>
+      <div class="grid-controls"><button id="gridEdit">单格显示开关</button><button data-shift="-4,0" aria-label="左移">←</button><button data-shift="0,-4" aria-label="上移">↑</button><button data-shift="0,4" aria-label="下移">↓</button><button data-shift="4,0" aria-label="右移">→</button><button id="resetOffset">位置复位</button></div>
+      <div class="grid-controls"><span id="offsetValue"></span><button id="prevPage">上一页</button><span id="pageValue"></span><button id="nextPage">下一页</button></div>
+      <div class="control-note">空格默认隐藏；单格设置中点击切换常显，Esc 完成。拖动时显示全网格，红色残缺格禁止放置。Alt + 方向键微调。图标上限随蜂窝尺寸联动。</div>
+    </div>
+  </section>
+
+  <main id="stage"><div id="hive"><svg id="connections"></svg><div id="cells"></div></div></main>
+  <div id="empty"><b>桌面里还没有项目</b><span>把快捷方式或文件放进 Windows 桌面后，点顶部刷新。</span></div>
+  <div id="loading">正在构建蜂巢桌面…</div>
+  <div id="toast"></div>
+  <section id="collection" hidden aria-label="文件收纳"><header><b>文件收纳</b><button id="collectionClose">关闭 ×</button></header><span id="collectionCount"></span><input id="collectionSearch" placeholder="搜索文档、文件夹…" aria-label="搜索收纳文件"><div id="collectionList"></div></section>
+  <nav id="itemMenu" hidden aria-label="图标操作"></nav>
+  <section id="transfer" hidden role="dialog" aria-label="跨屏传送"><b id="transferTitle"></b><p>选择目标屏幕；取消则保留原位置。</p><div id="transferTargets"></div><button id="transferCancel">取消</button></section>
+  <script src="grid.js"></script>
+  <script src="workspace.js"></script>
+  <script src="icon-fill.js"></script>
+  <script src="grid-app.js"></script>
+  <script src="island-geometry.js"></script>
+  <script src="island.js"></script>
+  <script src="media-timeline.js"></script>
+  <script src="media-sources.js"></script>
+  <script src="media-command-queue.js"></script>
+  <script src="island-pages.js"></script>
+  <script src="portal.js"></script>
+  <script src="hive-platform.js"></script>
+  <script src="hive-character.js"></script>
+  <script src="hive-hub.js"></script>
+  <script src="hub-metrics.js"></script>
+  <script src="layout-backups.js"></script>
+  <link rel="stylesheet" href="hub-experience.css">
+  <script src="hub-experience.js"></script>
+  <link rel="stylesheet" href="spectrum.css">
+  <script src="spectrum.js"></script>
+</body>
+</html>

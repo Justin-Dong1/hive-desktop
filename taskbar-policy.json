@@ -1,0 +1,4 @@
+{
+  "translucentTBEnabled": false,
+  "reason": "Disabled after XAML Diagnostics initialization timeout 0x80070102; retain the native taskbar instead of repeatedly restarting the failed controller."
+}

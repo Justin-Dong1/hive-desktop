@@ -1,0 +1,14 @@
+{
+  "name": "glass-hive-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Transparent honeycomb desktop shell for Windows 11 and Wallpaper Engine",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check main.js && node --check preload.js"
+  },
+  "devDependencies": {
+    "electron": "^39.2.7"
+  }
+}

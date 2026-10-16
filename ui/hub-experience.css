@@ -1,0 +1,24 @@
+#island:not(.island-moving){transition-duration:240ms}
+#island:not(.open) .island-compact{cursor:grab;touch-action:none}
+#island.island-moving .island-compact{cursor:grabbing}
+.island-page,.island-tabs button{transition-duration:240ms}
+.hub-settings-group{border:1px solid #ffffff18;border-radius:14px;background:#ffffff04;margin:0 0 10px;overflow:hidden}
+.hub-settings-group summary{padding:13px 15px;cursor:pointer;font-size:13px;font-weight:600;color:#dce8e8;user-select:none}
+.hub-settings-group[open] summary{background:#ffffff05;border-bottom:1px solid #ffffff0c}
+.hub-settings-content{padding:12px;display:flex;flex-direction:column;gap:10px}
+.hub-settings-content .action{min-height:34px}
+.hub-settings-content .size-control{margin:0}
+ #labels{padding:8px;border:1px solid #ffffff22;border-radius:8px;background:#222d2d;color:inherit;font:inherit}
+.hub-settings-content .layout-backups{padding:0!important}
+#noteTrashPanel{position:absolute;inset:0;z-index:3;padding:14px;background:#1b2225;border:1px solid #ffffff20;border-radius:14px;overflow:auto}
+#noteTrashPanel[hidden]{display:none}
+#noteTrashPanel button{display:block;width:100%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:12px;margin-bottom:8px;border-radius:10px;border:1px solid #ffffff20;background:#ffffff08;color:inherit;cursor:pointer}
+.notes-top{gap:8px;flex-wrap:wrap}.notes-top span{flex:1}.note-footer{flex-wrap:wrap;gap:7px}
+#noteSaveStatus{overflow-wrap:anywhere}#noteRetry{color:#f1c997}
+.music-art{background:radial-gradient(circle at 30% 20%,#7ca9a933,transparent 65%),linear-gradient(145deg,#35464c,#19242b)}
+.music-art>span:first-child{transition:opacity 240ms;opacity:.55}
+.has-cover .music-art>span:first-child{opacity:0}
+.cover-loading .music-art>span:first-child{animation:cover-breathe 1.2s ease-in-out infinite alternate}
+@keyframes cover-breathe{from{opacity:.25}to{opacity:.85}}
+.island-compact:focus-visible,.hub-settings-group summary:focus-visible{outline:2px solid #b8ded2;outline-offset:-3px}
+@media(prefers-reduced-motion:reduce){#island,.island-page,.island-tabs button,.music-art>*{transition:none!important;animation:none!important}}

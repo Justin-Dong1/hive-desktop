@@ -1,0 +1,164 @@
+#island .island-panel { padding:8px 16px 14px; height:calc(100% - 46px); cursor:default; display:flex; flex-direction:column; }
+.island-tabs { display:grid; grid-template-columns:repeat(3,1fr); flex:none; gap:4px; padding:4px; border:1px solid #ffffff12; background:#ffffff08; border-radius:15px; margin-bottom:12px; }
+.island-tabs button { border:0; background:transparent; color:#a6acb5; border-radius:11px; padding:9px; cursor:pointer; transition:background .25s,color .25s,box-shadow .25s; font-size:12px; }
+.island-tabs button[aria-selected=true] { background:#ffffff18; color:white; box-shadow:0 3px 12px #0003; }
+.island-pages { position:relative; flex:1; min-height:0; overflow:hidden; }
+.island-page { position:absolute; inset:0; overflow:auto; padding:0 2px 12px; opacity:0; transform:translateX(22px); pointer-events:none; visibility:hidden; transition:opacity .28s,transform .32s cubic-bezier(.2,.8,.2,1),visibility .32s; scrollbar-width:thin; }
+.island-page.active { opacity:1; transform:none; pointer-events:auto; visibility:visible; }
+.island-page.depart-left { transform:translateX(-22px); }
+.music-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 2px 14px; }
+.music-eyebrow { color:#a8b3c1; font-size:9px; letter-spacing:.23em; }
+#musicSource { max-width:65%; min-width:130px; border:1px solid #ffffff20; background:#20242c; color:#dce3ed; border-radius:9px; padding:6px; font:inherit; font-size:11px; }
+.music-card { position:relative; display:flex; gap:23px; align-items:center; padding:22px; border:1px solid #ffffff18; border-radius:23px; background:radial-gradient(ellipse at 0 0,#6389a538,transparent 75%),linear-gradient(130deg,#252b35,#171a22); overflow:hidden; }
+.music-art { flex:0 0 122px; height:122px; position:relative; border-radius:20px; background:repeating-radial-gradient(circle at center,#242b35 0 4px,#303b49 5px 6px); display:grid; place-items:center; box-shadow:0 12px 26px #0005; font-size:38px; color:#aec9d8; overflow:hidden; }
+.music-art img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.music-copy { min-width:0; flex:1; }
+#musicTitle { font-size:24px; line-height:1.3; font-weight:650; margin:8px 0; letter-spacing:-.03em; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+#musicArtist { color:#bdc5d1; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#musicAlbum { color:#747f91; font-size:11px; margin-top:7px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.music-state { font-size:10px; color:#a3e8c6; display:flex; align-items:center; gap:7px; }
+.music-bars { display:flex; align-items:center; gap:2px; height:14px; }
+.music-bars i { width:3px; height:5px; background:currentColor; border-radius:2px; }
+.playing .music-bars i { animation:equalize .9s ease-in-out infinite alternate; }
+.playing .music-bars i:nth-child(2) { animation-delay:-.4s; }
+.playing .music-bars i:nth-child(3) { animation-delay:-.7s; }
+@keyframes equalize { to { height:14px; } }
+.music-timeline { padding:16px 6px 0; }
+.music-track { height:3px; background:#ffffff14; border-radius:5px; overflow:hidden; }
+#musicProgress { height:100%; width:0; background:linear-gradient(90deg,#aacbe2,#a3e8c6); transition:width .5s linear; }
+.music-times { display:flex; justify-content:space-between; font-size:10px; color:#8893a4; margin-top:6px; font-variant-numeric:tabular-nums; }
+.music-controls { display:flex; align-items:center; justify-content:center; gap:22px; margin-top:8px; }
+.music-controls button { width:36px; height:36px; border:0; border-radius:50%; background:transparent; cursor:pointer; font-size:17px; }
+.music-controls #musicToggle { width:48px; height:48px; background:#e6edf3; color:#151a21; box-shadow:0 4px 20px #b4d7ef18; }
+.music-controls button:disabled { opacity:.3; cursor:default; }
+#musicHelp { color:#85909e; font-size:10px; text-align:center; line-height:1.6; margin:10px 0 0; }
+.notes-top { display:flex; align-items:center; justify-content:space-between; margin:1px 2px 12px; }
+.notes-top span { font-size:11px; color:#a7b1be; }
+.notes-top button,.notes-editor button { border:1px solid #ffffff20; border-radius:9px; background:#ffffff0c; padding:7px 11px; cursor:pointer; font-size:11px; }
+.notes-layout { display:grid; grid-template-columns:155px 1fr; gap:12px; height:calc(100% - 49px); min-height:200px; }
+.notes-list { overflow:auto; scrollbar-width:thin; }
+.notes-list button { display:block; text-align:left; width:100%; border:1px solid transparent; border-radius:12px; background:#ffffff05; padding:12px; margin-bottom:7px; cursor:pointer; }
+.notes-list button[aria-current=true] { background:#d5bc7b17; border-color:#d5bc7b40; }
+.notes-list b { display:block; font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.notes-list small { display:block; font-size:9px; color:#8e98a5; margin-top:7px; }
+.notes-editor { min-width:0; display:flex; flex-direction:column; border:1px solid #e7d29e26; border-radius:16px; overflow:hidden; background:linear-gradient(145deg,#c5ad6b0d,#ffffff03); }
+#noteText { flex:1; width:100%; min-height:120px; resize:none; padding:17px; border:0; outline:none; background:transparent; color:#ece5d5; font:13px/1.9 'Segoe UI','Microsoft YaHei UI',sans-serif; user-select:text; }
+.note-footer { display:flex; gap:6px; align-items:center; justify-content:space-between; padding:8px 12px; border-top:1px solid #ffffff0b; }
+#noteSaveStatus { font-size:10px; color:#a5adad; overflow-wrap:anywhere; }
+#noteDelete { color:#e5b7b4; flex-shrink:0; }
+@media(max-width:480px) { .music-art { flex-basis:80px; height:80px; } .music-card { gap:14px; padding:16px; } #musicTitle { font-size:19px; } .notes-layout { grid-template-columns:105px 1fr; } }
+@media(prefers-reduced-motion:reduce) { .island-page,.island-tabs button { transition:none; } .music-bars i { animation:none!important; } }
+
+/* Album-led glass treatment: image stays legible, ambient colour stays subtle. */
+.island-tabs { background:linear-gradient(180deg,#ffffff09,#ffffff03); border-color:#ffffff0f; }
+.island-tabs button { position:relative; }
+.island-tabs button[aria-selected=true] { background:linear-gradient(135deg,#ffffff21,#ffffff0d); box-shadow:inset 0 1px #ffffff14,0 4px 12px #0002; }
+.island-tabs button:hover:not([aria-selected=true]) { background:#ffffff07; color:#e1e7ef; }
+#island-music { --music-accent:#b7e5d6; }
+.music-top { margin:2px 4px 13px; }
+.music-eyebrow::before { content:''; display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--music-accent); margin-right:8px; box-shadow:0 0 10px #b7e5d64d; }
+#musicSource { background:#ffffff08; border-color:#ffffff12; border-radius:11px; padding:7px 10px; outline-offset:3px; }
+#musicSource option { background:#22272f; }
+.music-card { isolation:isolate; padding:21px; gap:24px; min-height:172px; border-color:#ffffff1b; background:linear-gradient(135deg,#28313c,#171b22 75%); box-shadow:inset 0 1px #ffffff0d,0 8px 24px #0002; }
+.music-atmosphere { position:absolute; z-index:-2; inset:-25%; width:150%; height:150%; object-fit:cover; filter:blur(34px) saturate(.8); opacity:.38; pointer-events:none; }
+.music-card::after { content:''; position:absolute; z-index:-1; inset:0; background:linear-gradient(90deg,#11182018,#10151c91); pointer-events:none; }
+.music-art { flex-basis:128px; height:128px; border-radius:16px; border:1px solid #ffffff23; box-shadow:0 14px 30px #0007,inset 0 1px #ffffff20; transition:box-shadow .3s; }
+.music-art img { z-index:1; }
+.has-cover .music-art>span { visibility:hidden; }
+#musicCoverStatus { position:absolute; bottom:13px; left:0; width:100%; text-align:center; font-size:9px; color:#b2becd; letter-spacing:.06em; }
+.music-art>span:first-child { transform:translateY(-8px); }
+.music-state { font-size:10px; letter-spacing:.08em; color:var(--music-accent); }
+#musicTitle { margin:10px 0 8px; font-size:25px; line-height:1.35; letter-spacing:-.025em; text-shadow:0 2px 12px #0002; }
+#musicArtist { color:#d1d8e2; font-size:12px; }
+#musicAlbum { color:#a3afbf; }
+.music-timeline { padding:15px 9px 0; }
+.music-track { background:#ffffff12; height:3px; }
+.music-times { color:#9aa6b5; margin-top:7px; font-size:10px; }
+.music-controls { margin-top:6px; gap:26px; }
+.music-controls button { display:grid; place-items:center; transition:transform .2s,background .2s,box-shadow .2s; }
+.music-controls button:hover:not(:disabled) { background:#ffffff10; transform:translateY(-1px); }
+.music-controls button:active:not(:disabled) { transform:scale(.94); }
+.music-controls #musicToggle { background:linear-gradient(145deg,#f1f6f7,#c4d9dc); box-shadow:0 5px 20px #92b8c329,inset 0 1px #fff; width:48px; height:48px; }
+.music-controls #musicToggle:hover:not(:disabled) { background:#f1fbff; box-shadow:0 5px 25px #a8d4d447; }
+#musicHelp { margin:8px 0 0; color:#8c99aa; font-size:10px; }
+.notes-editor { box-shadow:inset 0 1px #efdfa510; }
+.notes-list button { transition:background .2s,border-color .2s; }
+.notes-list button:hover { background:#ffffff0b; }
+@media(max-width:480px) { .music-art { flex-basis:94px; height:94px; } .music-card { min-height:152px; padding:18px; gap:17px; } #musicTitle { font-size:20px; } #musicCoverStatus { bottom:7px; font-size:8px; } }
+@media(prefers-reduced-motion:reduce) { .music-art,.music-controls button,.notes-list button { transition:none; } }
+.music-track { height:18px; overflow:visible; background:none; display:flex; align-items:center; }
+#musicSeek { --progress:0%; appearance:none; -webkit-appearance:none; margin:0; width:100%; height:5px; border-radius:8px; outline-offset:5px; background:linear-gradient(to right,#b7e5d6 var(--progress),#ffffff24 var(--progress)); cursor:pointer; }
+#musicSeek::-webkit-slider-thumb { appearance:none; width:12px; height:12px; border-radius:50%; background:#e2f3ef; box-shadow:0 0 0 3px #b7e5d61a; }
+#musicSeek:disabled { cursor:not-allowed; background:#ffffff24; }
+#musicSeek:disabled::-webkit-slider-thumb { background:#7c8794; box-shadow:none; width:8px; height:8px; }
+.music-times { margin-top:0; }
+.music-controls { gap:18px; margin-top:8px; }
+.music-controls .music-mode { font-size:10px; width:46px; height:32px; border-radius:10px; border:1px solid #ffffff16; }
+.music-controls .music-mode[aria-pressed=true],.music-controls .music-mode[data-active=true] { background:#b7e5d61c; color:#b7e5d6; border-color:#b7e5d652; }
+.music-controls .music-mode:disabled { opacity:.5; }
+.music-card { min-height:162px; padding:16px 21px; }
+.music-timeline { padding-top:10px; }
+#musicHelp { font-size:10px; line-height:1.45; margin-top:7px; }
+.music-simple .music-card { min-height:204px; padding:27px; gap:27px; }
+.music-simple .music-art { flex-basis:150px; height:150px; }
+.music-simple .music-controls { margin-top:23px; gap:32px; }
+.music-simple .music-controls #musicToggle { width:52px; height:52px; }
+@media(max-width:480px) { .music-simple .music-card { min-height:175px; padding:18px; gap:17px; } .music-simple .music-art { flex-basis:100px; height:100px; } }
+.hub-heading { padding:9px 7px 19px; }
+.hub-heading { position:relative; padding-right:235px; min-height:118px; }
+.hub-metrics { position:absolute; right:7px; top:7px; display:flex; gap:10px; }
+.hub-resource { width:101px; padding:10px 12px; border-radius:14px; border:1px solid #ffffff16; background:linear-gradient(145deg,#b3d9e60d,#ffffff03); }
+.hub-resource>span { display:block; color:#a7becb; font-size:10px; letter-spacing:.08em; }
+.hub-resource strong { display:block; margin:5px 0 7px; color:#e2f4f3; font-size:23px; font-weight:500; font-variant-numeric:tabular-nums; }
+.hub-resource meter { display:block; width:100%; height:5px; border:0; }
+.hub-resource meter::-webkit-meter-bar { background:#ffffff15; border:0; border-radius:5px; }
+.hub-resource meter::-webkit-meter-optimum-value { background:#99d9cf; border-radius:5px; transition:width .4s; }
+.hub-resource small { display:block; margin-top:7px; color:#8ea6b2; font-size:9px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+@media(max-width:480px){.hub-heading { padding-right:7px; }.hub-metrics { position:static; margin-top:14px; }.hub-resource { flex:1; width:auto; }}
+.hub-heading>span,.challenge-heading>span { font-size:9px; letter-spacing:.24em; color:#a7cbd6; }
+.hub-heading h2,.challenge-heading h2 { font-size:25px; margin:8px 0; font-weight:600; }
+.hub-heading p,.challenge-heading p { margin:0; color:#8c9baa; font-size:12px; }
+.hub-tiles { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+.hub-tile { position:relative; min-height:182px; padding:23px; border:1px solid #ffffff18; border-radius:21px; background:linear-gradient(145deg,#344252aa,#182029a0); cursor:pointer; text-align:left; transition:transform .2s,border-color .2s,background .2s; }
+.hub-tile:hover { transform:translateY(-3px); border-color:#bddbe666; background:linear-gradient(145deg,#435b6baa,#202a35); }
+.hub-tile .tile-art { display:grid; place-items:center; width:45px; height:45px; border:1px solid #cadfe833; background:#c4e2ec13; border-radius:13px; font-size:28px; color:#d2ebf4; margin-bottom:20px; }
+.hub-tile strong { display:block; font-size:17px; font-weight:600; margin-bottom:8px; }
+.hub-tile small { display:block; font-size:10px; color:#afbdc8; line-height:1.6; }
+.hub-tile b { position:absolute; right:20px; top:22px; color:#c0d6df; font-size:18px; font-weight:400; }
+.hub-tile.game-tile { background:linear-gradient(145deg,#32534baa,#182622); }
+.hub-back { border:0; background:#ffffff09; color:#b9c8d4; padding:8px 12px; border-radius:10px; font-size:11px; cursor:pointer; margin-bottom:14px; }
+.challenge-heading { margin:3px 5px 15px; }
+.challenge-rules { display:grid; gap:11px; padding:15px; border:1px solid #ffffff13; background:#ffffff05; border-radius:14px; color:#bdcbd4; font-size:11px; }
+.challenge-rules kbd { border:1px solid #b4d4e433; padding:2px 5px; border-radius:4px; background:#abc5d31c; font:inherit; margin-right:3px; }
+.challenge-start { width:100%; margin-top:15px; padding:12px; border-radius:12px; border:1px solid #bce9df50; color:#d9f7ec; background:#61968e2e; cursor:pointer; }
+#hiveGame { position:fixed; inset:0; z-index:200; outline:none; cursor:default; }
+#hiveGame canvas { position:absolute; inset:0; width:100%; height:100%; }
+.hive-playing #stage,.hive-playing .hint,.hive-playing .brand,.hive-playing #island { pointer-events:none!important; }
+.hive-playing #island,.hive-playing .hint,.hive-playing .brand { visibility:hidden; }
+.hive-playing #cells { opacity:.5; }
+.hive-playing #stage { visibility:hidden; }
+.game-hud { position:absolute; top:14px; left:50%; transform:translateX(-50%); display:flex; justify-content:space-between; align-items:center; gap:30px; width:max-content; max-width:calc(100% - 24px); padding:11px 18px; border:1px solid #b7e5ee30; border-radius:17px; background:#0e1722ed; box-shadow:0 10px 35px #0005; }
+.game-hud>div { display:flex; gap:14px; align-items:center; }.game-hud b { font-size:14px; }.game-hud span { font-size:11px; color:#a5bacb; }#hammerState.ready { color:#9cf0d2; }
+.game-hud button,#gameDialog button { border:1px solid #ffffff25; background:#ffffff0e; border-radius:9px; padding:8px 12px; color:#d7e9f4; cursor:pointer; font:inherit; font-size:11px; }
+.game-keys { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); background:#0c152033; border:1px solid #ffffff16; padding:9px 15px; border-radius:20px; color:#d2e4ed; text-shadow:0 1px 3px #000; font-size:11px; white-space:nowrap; pointer-events:none; }
+#gameDialog { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(420px,90vw); padding:30px; border-radius:23px; border:1px solid #b6dce637; background:#101d2bf5; box-shadow:0 20px 80px #0008; text-align:center; }
+#gameDialog h2 { margin:0 0 14px; font-weight:500; }#gameDialog p { font-size:12px; color:#adc1d0; line-height:1.8; margin-bottom:23px; }#gameDialog button { margin:4px; }
+@media(max-width:520px) { .hub-tile { padding:16px; min-height:166px; }.game-hud { gap:10px; flex-wrap:wrap; }.game-hud>div { gap:7px; } }
+@media(prefers-reduced-motion:reduce) { .hub-tile { transition:none; } }
+.game-pad { position:absolute; left:20px; bottom:20px; padding:12px; border:1px solid #c5e5ef26; border-radius:16px; background:#111e2b33; text-align:center; text-shadow:0 1px 3px #000; }
+.game-pad button { width:34px; height:32px; margin:3px; border:1px solid #d5eef333; border-radius:8px; background:#ffffff09; color:#bed5df; font:12px inherit; cursor:pointer; touch-action:none; }
+.game-pad button.held,.game-pad button:active { background:#b1e9ee38; color:white; border-color:#acf1e4; }
+.game-pad .pad-hammer { display:block; width:calc(100% - 6px); margin-top:7px; }
+#gameStats { min-width:130px; font-variant-numeric:tabular-nums; }
+.game-hud b { min-width:110px; font-variant-numeric:tabular-nums; }
+.character-picker { display:flex; align-items:center; gap:16px; margin:12px 0; padding:10px 16px; border:1px solid #ffffff1c; border-radius:16px; background:#ffffff06; }
+.character-preview { width:80px; height:80px; flex:none; background:#10182070; border-radius:14px; }
+.character-preview svg { width:100%; height:100%; filter:drop-shadow(0 0 3px var(--character-glow)); }
+.character-options { min-width:0; }
+.character-options b { font-size:12px; }.character-options b span { margin-left:8px; color:var(--character-body); font-weight:400; }
+.character-swatches { display:flex; flex-wrap:wrap; gap:9px; margin-top:12px; }
+.character-swatches button { width:28px; height:28px; padding:0; border-radius:50%; background:var(--swatch); border:3px solid #18212c; cursor:pointer; outline:1px solid #ffffff30; }
+.character-swatches button[aria-pressed=true] { outline:2px solid white; box-shadow:0 0 10px var(--swatch); }
+.character-swatches button[aria-pressed=true]::after { content:'✓'; color:#15212a; font-size:15px; font-weight:700; }
+.character-swatches button:focus-visible { outline:2px dashed white; outline-offset:4px; }
+#hammerState { min-width:100px; font-variant-numeric:tabular-nums; }

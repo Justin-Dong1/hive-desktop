@@ -1,0 +1,14 @@
+'use strict';
+const vm=require('vm'),fs=require('fs'),path=require('path'),assert=require('assert');
+const classes=new Set(),children=[],subscriptions=[];let observer,callback,poll,playing=true;
+const host={hidden:false,classList:{contains:k=>classes.has(k),add:k=>classes.add(k),remove:k=>classes.delete(k)},querySelector:()=>({append:()=>{}})};
+const context={document:{getElementById:()=>host,createElement:tag=>tag==='i'?{style:{}}:{children,append:x=>children.push(x),setAttribute:()=>{}}},window:{glassHive:{spectrumActive:x=>subscriptions.push(x),onSpectrum:fn=>callback=fn,mediaStatus:async()=>({ok:true,sessions:[{playing}]})}},MutationObserver:class{constructor(fn){observer=fn;}observe(){}},setInterval:fn=>poll=fn,Date};
+vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../ui/spectrum.js'),'utf8'),context);
+(async()=>{await new Promise(setImmediate);assert.equal(children.length,24);assert(subscriptions.at(-1));callback(Array(24).fill(.5));assert(classes.has('has-spectrum'));assert(children.every(c=>c.style.transform==='scaleY(0.535)'));
+classes.add('open');observer();assert(!classes.has('has-spectrum'));assert.equal(subscriptions.at(-1),false);
+classes.delete('open');observer();callback(Array.from({length:24},(_,i)=>i/23));for(let i=0;i<12;i++)assert.equal(children[i].style.transform,children[23-i].style.transform,'Asymmetric input must render mirrored pairs');callback(Array(24).fill(0));for(let i=0;i<12;i++)assert.equal(children[i].style.transform,children[23-i].style.transform,'Release smoothing must remain mirrored');
+classes.delete('open');classes.add('dot-mode');observer();assert.equal(subscriptions.at(-1),false);
+classes.delete('dot-mode');classes.add('wallpaper-idle');observer();assert.equal(subscriptions.at(-1),false);callback(Array(24).fill(.8));assert(!classes.has('has-spectrum'));classes.delete('wallpaper-idle');observer();assert.equal(subscriptions.at(-1),true);
+playing=false;poll();await new Promise(setImmediate);assert.equal(subscriptions.at(-1),false);assert(!classes.has('has-spectrum'));
+playing=true;poll();await new Promise(setImmediate);callback(null);assert(!classes.has('has-spectrum'));host.hidden=true;observer();assert.equal(subscriptions.at(-1),false);
+console.log('PASS 24 data-driven bars, pause, expanded, dot, hidden and failure fallback');})().catch(e=>{console.error(e);process.exitCode=1;});

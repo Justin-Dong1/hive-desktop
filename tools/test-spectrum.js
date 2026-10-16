@@ -1,0 +1,10 @@
+'use strict';
+const {spawn,execFileSync}=require('child_process'),path=require('path'),fs=require('fs'),assert=require('assert');
+const exe=path.join(__dirname,'../vendor/NAudio-1.10/HiveSpectrum.exe');
+console.log(execFileSync(exe,['--test'],{encoding:'utf8'}).trim());
+const child=spawn(exe,[],{windowsHide:true,stdio:['pipe','pipe','pipe']});let buffer='',frames=0,nonzero=0,errors=0;
+child.stdout.on('data',chunk=>{buffer+=chunk;let end;while((end=buffer.indexOf('\n'))>=0){const value=JSON.parse(buffer.slice(0,end));buffer=buffer.slice(end+1);if(Array.isArray(value)){assert.equal(value.length,24);assert(value.every(x=>Number.isFinite(x)&&x>=0&&x<=1));frames++;if(value.some(x=>x>0))nonzero++;}else errors++;}});
+child.on('error',e=>{console.error(e);process.exitCode=1;});
+setTimeout(()=>child.stdin.end(),4000);
+const timeout=setTimeout(()=>{child.kill();process.exitCode=1;},8000);
+child.on('exit',code=>{clearTimeout(timeout);const report={time:new Date().toISOString(),frames,nonzero,errors,exitCode:code,fftToneAndSilencePassed:true};fs.writeFileSync(path.join(__dirname,'../spectrum-verification.json'),JSON.stringify(report,null,2));console.log(report);if(frames<10||errors||code!==0)process.exitCode=1;});

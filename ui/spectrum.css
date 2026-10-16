@@ -1,0 +1,6 @@
+#hiveSpectrum{display:none;position:absolute;inset:5px 12px;align-items:center;justify-content:space-between;gap:4px;pointer-events:none;overflow:hidden}
+#hiveSpectrum i{display:block;flex:1;max-width:8px;height:36px;border-radius:4px;background:linear-gradient(to bottom,#8bc3b6,#e3f5ed 50%,#8bc3b6);transform:scaleY(.07);transition:transform 65ms linear;transform-origin:center}
+#island.has-spectrum:not(.dot-mode):not(.open){background:transparent;border-color:transparent;box-shadow:none}
+#island.has-spectrum:not(.dot-mode):not(.open) #hiveSpectrum{display:flex}
+#island.has-spectrum:not(.dot-mode):not(.open) .island-compact> :not(#hiveSpectrum){opacity:0}
+@media(prefers-reduced-motion:reduce){#hiveSpectrum i{transition:none}}

@@ -1,0 +1,14 @@
+const assert=require('assert'),fs=require('fs'),vm=require('vm'),path=require('path');
+const workspace=fs.readFileSync(path.join(__dirname,'../ui/workspace.js'),'utf8'),grid=fs.readFileSync(path.join(__dirname,'../ui/grid-app.js'),'utf8');
+let assignments={},writes=0,quits=0,opens=0;
+const context={localStorage:{getItem:k=>k==='hive-display-assignments'?JSON.stringify(assignments):null},displayId:'main',primaryDisplay:true,storedWrite:()=>writes++,window:{glassHive:{quit:()=>quits++,openItem:async()=>{opens++;return {ok:true};}}},editing:false,suppress:0,Date,toast(){},openCollection(){}};
+vm.createContext(context);vm.runInContext(workspace.slice(workspace.indexOf('const COLLECTION_ID='),workspace.indexOf('function applyItems()')),context);
+vm.runInContext("displayList=[{id:'main',layoutId:'stable-main'},{id:'second',layoutId:'stable-second'}];desktopItems=[{id:'real',name:'App',rawName:'App.lnk'}];",context);
+assert(vm.runInContext('visibleItems().some(i=>i.id===EXIT_ID)',context));
+assignments.__hive_exit__='stable-second';assert(!vm.runInContext('visibleItems().some(i=>i.id===EXIT_ID)',context));
+context.displayId='second';context.primaryDisplay=false;assert(vm.runInContext('visibleItems().some(i=>i.id===EXIT_ID)',context));
+vm.runInContext('collectItem(EXIT_ID,true)',context);assert.equal(writes,0,'Cannot lose virtual exit inside collection');
+const line=grid.split('\n').find(l=>l.includes('app.ondblclick='));context.app={};vm.runInContext('var item=exitItem;'+line,context);
+(async()=>{await context.app.ondblclick({stopPropagation(){}});assert.equal(quits,1);assert.equal(opens,0,'Exit never launches a filesystem item');context.editing=true;await context.app.ondblclick({stopPropagation(){}});assert.equal(quits,1,'Editing must not exit');
+assert(!fs.readFileSync(path.join(__dirname,'../ui/index.html'),'utf8').includes('id="desktopExit"'));
+console.log('PASS virtual honeycomb exit: screen ownership, collection guard, double-click quit, edit guard, no fixed button');})().catch(e=>{console.error(e);process.exitCode=1;});
