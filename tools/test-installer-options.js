@@ -1,0 +1,11 @@
+'use strict';
+const assert=require('assert'),fs=require('fs'),path=require('path');
+const root=path.join(__dirname,'..');
+const config=fs.readFileSync(path.join(root,'electron-builder.yml'),'utf8');
+const script=fs.readFileSync(path.join(root,'build','installer.nsh'),'utf8');
+assert.match(config,/createDesktopShortcut:\s*false/,'Built-in forced desktop shortcut must stay disabled');
+for(const text of ['customPageAfterChangeDir','DesktopShortcutPageCreate','${NSD_Check} $DesktopShortcutCheckbox','CreateShortCut "$newDesktopLink"','是否保留蜂巢桌面的个人数据？','RMDir /r "$APPDATA\\glass-hive-desktop"','RMDir /r "$LOCALAPPDATA\\GlassHiveDesktop"','/SD IDYES'])assert(script.includes(text),`Missing installer behavior: ${text}`);
+assert(script.indexOf('recover-desktop.ps1')<script.indexOf('RMDir /r "$LOCALAPPDATA\\GlassHiveDesktop"'),'Desktop recovery must run before optional state deletion');
+assert(script.includes('!ifndef BUILD_UNINSTALLER'),'Installer-only UI must be excluded while compiling the uninstaller');
+assert.equal((script.match(/Delete "\$LOCALAPPDATA\\\$\{APP_INSTALLER_STORE_FILE\}"/g)||[]).length,2,'Installer cache must be removed after installation and uninstall');
+console.log('PASS optional desktop shortcut and safe keep/delete uninstall choices');

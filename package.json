@@ -1,6 +1,6 @@
 {
   "name": "glass-hive-desktop",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "private": true,
   "license": "GPL-3.0-only",
   "description": "Hive Desktop for Windows 11, with optional Wallpaper Engine integration",
