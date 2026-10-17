@@ -2,6 +2,10 @@
 const {spawn,execFileSync}=require('child_process'),path=require('path'),fs=require('fs'),assert=require('assert');
 const exe=path.join(__dirname,'../vendor/NAudio-2.2.1/HiveSpectrum.exe');
 console.log(execFileSync(exe,['--test'],{encoding:'utf8'}).trim());
+if(process.env.HIVE_SKIP_LIVE_AUDIO==='1'){
+ console.log('PASS spectrum FFT and executable startup; live WASAPI capture skipped because this environment has no audio endpoint');
+ process.exit(0);
+}
 const child=spawn(exe,[],{windowsHide:true,stdio:['pipe','pipe','pipe']});let buffer='',frames=0,nonzero=0,errors=0;
 child.stdout.on('data',chunk=>{buffer+=chunk;let end;while((end=buffer.indexOf('\n'))>=0){const value=JSON.parse(buffer.slice(0,end));buffer=buffer.slice(end+1);if(Array.isArray(value)){assert.equal(value.length,24);assert(value.every(x=>Number.isFinite(x)&&x>=0&&x<=1));frames++;if(value.some(x=>x>0))nonzero++;}else errors++;}});
 child.on('error',e=>{console.error(e);process.exitCode=1;});

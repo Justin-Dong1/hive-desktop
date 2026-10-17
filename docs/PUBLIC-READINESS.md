@@ -36,6 +36,6 @@
 
 - `SECURITY.md` 提供私密漏洞报告说明。
 - GitHub Issue 模板要求系统版本、显示环境、复现步骤和脱敏材料。
-- Windows CI 执行锁定依赖安装、语法检查、高危依赖审计、原生资源准备、37 项测试和安装目录组装检查。
+- Windows CI 执行锁定依赖安装、语法检查、高危依赖审计、原生资源准备、37 项测试和安装目录组装检查。托管机没有音频端点时跳过实时 WASAPI 帧数要求，但仍运行频谱 FFT 与程序启动检查；发布机继续执行真实回环采集。
 
 参考：[Electron 安全建议](https://www.electronjs.org/docs/latest/tutorial/security)、[NAudio 2.2.1 MIT 许可](https://github.com/naudio/NAudio/blob/v2.2.1/license.txt)、[GNU 许可证兼容性列表](https://www.gnu.org/licenses/license-list.html)。

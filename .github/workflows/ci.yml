@@ -33,6 +33,8 @@ jobs:
         shell: powershell
         run: .\tools\prepare-release.ps1
       - name: Run regression and real Chromium tests
+        env:
+          HIVE_SKIP_LIVE_AUDIO: '1'
         run: pnpm test
       - name: Verify Windows package assembly
         run: pnpm run pack

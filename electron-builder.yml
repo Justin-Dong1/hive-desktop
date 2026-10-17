@@ -21,6 +21,7 @@ files:
   - '!tools/build-spectrum.ps1'
   - '!tools/build-icon.ps1'
   - '!tools/prepare-release.ps1'
+  - '!tools/run-tests.ps1'
   - '!tools/release-checksum.js'
   - '!tools/publish-draft.js'
   - taskbar-policy.json
