@@ -4,11 +4,11 @@ Windows 11 透明蜂窝桌面层，保留 Explorer、原生任务栏和当前壁
 
 ## 发布准备状态
 
-当前 main 包含 1.1.2 安装包之后的稳定性修复，旧安装包不包含这些改动。源码更新记录及公开前阻碍见 [公开前检查](docs/PUBLIC-READINESS.md)。暂勿将旧草稿发布为最新版本。
+当前版本为 1.1.3，包含 1.1.2 之后的稳定性修复及频谱 MIT 依赖迁移，旧安装包不包含这些改动。源码更新记录及公开前阻碍见 [公开前检查](docs/PUBLIC-READINESS.md)。暂勿将旧草稿发布为最新版本。
 
-本项目原创代码采用 **GPL-3.0-only**，完整条款见 [LICENSE](LICENSE)；第三方代码与组件保留各自许可证，见 [第三方声明](THIRD_PARTY_NOTICES.md)。目前频谱依赖 NAudio 1.10（Ms-PL）的 GPL 兼容性尚未解决，不能把现有捆绑安装包作为已完成 GPL 合规审查的版本分发。
+本项目原创代码采用 **GPL-3.0-only**，完整条款见 [LICENSE](LICENSE)；第三方代码与组件保留各自许可证，见 [第三方声明](THIRD_PARTY_NOTICES.md)。1.1.3 已将频谱依赖替换为 MIT 许可的 NAudio 2.2.1 Core / WASAPI 模块；旧 1.1.0 / 1.1.2 包仍只供历史归档，不公开分发。
 
-## 普通用户：安装版（1.1.2 测试版）
+## 普通用户：安装版（1.1.3 测试版）
 
 **只想安装使用？只读本节和下面的“安装版：Wallpaper 与频谱”。不用编辑 JSON，不用下载 DLL，不用输入命令。**
 
@@ -41,9 +41,9 @@ Windows 11 透明蜂窝桌面层，保留 Explorer、原生任务栏和当前壁
 3. 检测到播放后，长条本身显示左右对称的频谱柱；它不是音乐页面里的进度条。圆点、展开面板、暂停播放时不显示频谱。
 4. 如果不显示：先看“音乐”页是否识别到歌曲正在播放；没有识别到时，检查播放器的系统媒体控制设置。已识别但柱子不跳时，检查声音是否静音、是否输出到 Windows 默认播放设备。不同播放器版本的媒体会话支持不同，不保证任意音频软件都能触发。
 
-版本区别：原 1.1.0 测试包存在“没有 Wallpaper 进程时频谱不显示”的问题，而且 Wallpaper 选择后缺少结果提示。请下载 **`HiveDesktop-Setup-1.1.2-x64.exe`**：包含本次内圆裁切（不额外填白）、内外圆同心、悬停上浮、独立频谱及 Wallpaper 进程检测修复。不要再下载原 1.1.0 或本机未发布的 1.1.1 包。
+版本区别：原 1.1.0 测试包存在“没有 Wallpaper 进程时频谱不显示”的问题，而且 Wallpaper 选择后缺少结果提示。请下载 **`HiveDesktop-Setup-1.1.3-x64.exe`**（并包含后续稳定性修复）：包含本次内圆裁切（不额外填白）、内外圆同心、悬停上浮、独立频谱及 Wallpaper 进程检测修复。不要再下载原 1.1.0 或本机未发布的 1.1.1 包。
 
-安装包名称为 `HiveDesktop-Setup-1.1.2-x64.exe`，无需 Node.js、pnpm 或手动运行命令。安装向导支持选择安装位置，并创建桌面入口；首次启动可选择登录自启动、关联 Wallpaper Engine 或直接使用系统壁纸。选择后会显示配置与检测结果；保存路径不等于确认壁纸动画已播放。关闭安装向导不会自动接管桌面，双击“蜂巢桌面”后才进入。
+安装包名称为 `HiveDesktop-Setup-1.1.3-x64.exe`，无需 Node.js、pnpm 或手动运行命令。安装向导支持选择安装位置，并创建桌面入口；首次启动可选择登录自启动、关联 Wallpaper Engine 或直接使用系统壁纸。选择后会显示配置与检测结果；保存路径不等于确认壁纸动画已播放。关闭安装向导不会自动接管桌面，双击“蜂巢桌面”后才进入。
 
 发布附件同时提供 `SHA256SUMS.txt` 和 `release-manifest.json`，后者记录构建源码提交号和包内文件哈希；打包与运行自检均校验资源一致性。更新后保留用户已选择的“内圆/原图”样式，不强制重置个人布局。新用户没有旧布局，图标位置当然不会与开发者电脑完全相同，但使用的是相同界面和逻辑。
 
@@ -99,15 +99,15 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\launch.ps1
 
 ## 开发者专用：源码版编译频谱（安装版已内置，请跳过）
 
-音乐控制不依赖频谱组件。频谱使用 NAudio 1.10 WASAPI 回环分析系统播放声音，不采集麦克风、不上传音频。
+音乐控制不依赖频谱组件。频谱使用 NAudio 2.2.1 WASAPI 回环分析系统播放声音，不采集麦克风、不上传音频。
 
-仓库不附带二进制依赖。从 NAudio 官方 NuGet 包中取出 `lib/net35/NAudio.dll`，放入 `vendor/NAudio-1.10/NAudio.dll`，运行：
+仓库不附带二进制依赖。以下命令自动下载并校验官方 MIT 组件、保存许可并编译频谱，无需手动找 DLL：
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\build-spectrum.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\prepare-release.ps1
 ```
 
-脚本使用 Windows .NET Framework 64 位 C# 编译器构建并自测。缺少编译器可跳过，不影响其他功能。来源及许可见 `THIRD_PARTY_NOTICES.md`。
+脚本使用 Windows .NET Framework 4.8 的 64 位 C# 编译器构建并自测。缺少编译器可跳过，不影响其他功能。来源及许可见 `THIRD_PARTY_NOTICES.md`。
 
 ## 使用说明
 

@@ -1,15 +1,19 @@
 # Third-party notices
 
-Original project code is licensed under GPL-3.0-only (see LICENSE). This does not relicense third-party code. NAudio 1.10 uses Ms-PL, listed by GNU as GPL-incompatible. Existing bundled installers must remain unpublished pending dependency compatibility resolution and a fresh build; see docs/PUBLIC-READINESS.md.
+Original project code is licensed under GPL-3.0-only (see LICENSE). This does not relicense third-party code. Version 1.1.3 replaces the old Ms-PL NAudio 1.10 dependency with MIT-licensed NAudio 2.2.1 modules. Old installers are not retroactively relicensed or updated.
 
 ## Optional NAudio frequency spectrum component
 
-The optional spectrum helper uses NAudio 1.10.0 under the Microsoft Public License (Ms-PL). Binaries are not included in this source repository. Obtain the official package and retain its licensing information when redistributing builds:
+The spectrum helper uses NAudio.Core 2.2.1 and NAudio.Wasapi 2.2.1 under the MIT license. Both official NuGet packages declare MIT. Wasapi depends only on Core for the netstandard2.0 target; Core declares no additional package dependencies for that target.
 
-Copyright (c) Mark Heath and contributors, 2020. Installer builds include NAudio.dll and the complete license in `resources/app/vendor/NAudio-1.10/LICENSE.txt`.
+Copyright 2020 Mark Heath (license text); package metadata also credits Mark Heath, 2023. Full upstream license: `licenses/NAudio-2.2.1.txt`. Installer builds retain it at `resources/app/vendor/NAudio-2.2.1/LICENSE.txt`, next to NAudio.Core.dll, NAudio.Wasapi.dll and HiveSpectrum.exe.
 
-- Package: https://api.nuget.org/v3-flatcontainer/naudio/1.10.0/naudio.1.10.0.nupkg
-- License: https://github.com/naudio/NAudio/blob/v1.10.0/license.txt
+- Core: https://api.nuget.org/v3-flatcontainer/naudio.core/2.2.1/naudio.core.2.2.1.nupkg
+- Wasapi: https://api.nuget.org/v3-flatcontainer/naudio.wasapi/2.2.1/naudio.wasapi.2.2.1.nupkg
+- License: https://github.com/naudio/NAudio/blob/v2.2.1/license.txt
+- Source: https://github.com/naudio/NAudio/tree/v2.2.1
+
+The Electron runtime retains its upstream LICENSE.electron.txt and LICENSES.chromium.html in the installer. Do not remove these notices when redistributing.
 
 ## Shell icon extraction
 

@@ -26,9 +26,10 @@ files:
   - taskbar-policy.json
   - THIRD_PARTY_NOTICES.md
   - LICENSE
-  - vendor/NAudio-1.10/NAudio.dll
-  - vendor/NAudio-1.10/HiveSpectrum.exe
-  - vendor/NAudio-1.10/LICENSE.txt
+  - vendor/NAudio-2.2.1/NAudio.Core.dll
+  - vendor/NAudio-2.2.1/NAudio.Wasapi.dll
+  - vendor/NAudio-2.2.1/HiveSpectrum.exe
+  - vendor/NAudio-2.2.1/LICENSE.txt
 win:
   executableName: HiveDesktop
   icon: build/hive.ico
