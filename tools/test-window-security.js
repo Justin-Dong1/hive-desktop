@@ -1,0 +1,13 @@
+'use strict';
+const assert=require('assert'),fs=require('fs'),path=require('path');
+const root=path.join(__dirname,'..');
+const main=fs.readFileSync(path.join(root,'main.js'),'utf8');
+const notesWindow=fs.readFileSync(path.join(__dirname,'notes-editor-window.js'),'utf8');
+const index=fs.readFileSync(path.join(root,'ui','index.html'),'utf8');
+const notes=fs.readFileSync(path.join(root,'ui','notes-editor.html'),'utf8');
+assert(main.includes('contextIsolation: true')&&main.includes('nodeIntegration: false')&&main.includes('sandbox: true'));
+assert(main.includes("setWindowOpenHandler(() => ({action:'deny'}))")&&main.includes("on('will-navigate',event=>event.preventDefault())"));
+assert(notesWindow.includes('contextIsolation:true')&&notesWindow.includes('nodeIntegration:false')&&notesWindow.includes('sandbox:true'));
+assert(notesWindow.includes("setWindowOpenHandler(()=>({action:'deny'}))")&&notesWindow.includes("on('will-navigate',navigateEvent=>navigateEvent.preventDefault())"));
+for(const html of [index,notes])assert(/Content-Security-Policy/.test(html));
+console.log('PASS sandbox, context isolation, navigation denial and CSP for desktop and notes windows');

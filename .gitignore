@@ -4,6 +4,9 @@
 !/README.md
 !/THIRD_PARTY_NOTICES.md
 !/LICENSE
+!/SECURITY.md
+!/.github/
+!/.github/**
 !/licenses/
 !/package.json
 !/pnpm-lock.yaml

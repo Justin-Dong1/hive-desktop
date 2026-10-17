@@ -1,6 +1,6 @@
 {
   "name": "glass-hive-desktop",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "private": true,
   "license": "GPL-3.0-only",
   "description": "Hive Desktop for Windows 11, with optional Wallpaper Engine integration",
@@ -8,12 +8,13 @@
   "scripts": {
     "start": "electron .",
     "check": "node --check main.js && node --check preload.js",
+    "test": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/run-tests.ps1",
     "prepare:release": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/prepare-release.ps1",
     "pack": "pnpm run prepare:release && electron-builder --dir --win --x64 --publish never",
     "dist": "pnpm run prepare:release && electron-builder --win --x64 --publish never"
   },
   "devDependencies": {
-    "electron": "^39.2.7",
+    "electron": "44.8.0",
     "electron-builder": "26.15.3"
   }
 }

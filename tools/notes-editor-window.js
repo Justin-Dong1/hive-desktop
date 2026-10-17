@@ -8,9 +8,10 @@ module.exports=({BrowserWindow,ipcMain,screen,root})=>{
   if(win&&!win.isDestroyed()){win.show();win.focus();return {ok:true,external:true};}
   const area=screen.getDisplayMatching(owner.getBounds()).workArea;
   const width=Math.min(560,area.width),height=Math.min(420,area.height);
-  win=new BrowserWindow({width,height,x:Math.round(area.x+(area.width-width)/2),y:Math.round(area.y+(area.height-height)/2),show:false,title:'编辑便签 · 蜂巢桌面',autoHideMenuBar:true,backgroundColor:'#182020',minWidth:280,minHeight:180,webPreferences:{preload:path.join(root,'preload.js'),contextIsolation:true,nodeIntegration:false}});
+  win=new BrowserWindow({width,height,x:Math.round(area.x+(area.width-width)/2),y:Math.round(area.y+(area.height-height)/2),show:false,title:'编辑便签 · 蜂巢桌面',autoHideMenuBar:true,backgroundColor:'#182020',minWidth:280,minHeight:180,webPreferences:{preload:path.join(root,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:true}});
+  win.webContents.setWindowOpenHandler(()=>({action:'deny'}));
   editors.set(owner.id,win);owner.once('closed',()=>{if(!win.isDestroyed())win.close();});
   win.on('closed',()=>editors.delete(owner.id));
-  await win.loadFile(path.join(root,'ui','notes-editor.html'),{query:{id,screen:String(owner.id)}});win.show();win.focus();return {ok:true,external:true};
+  await win.loadFile(path.join(root,'ui','notes-editor.html'),{query:{id,screen:String(owner.id)}});win.webContents.on('will-navigate',navigateEvent=>navigateEvent.preventDefault());win.show();win.focus();return {ok:true,external:true};
  });
 };

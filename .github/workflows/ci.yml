@@ -1,0 +1,38 @@
+name: Windows CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Syntax and high severity dependency audit
+        run: |
+          pnpm run check
+          pnpm audit --audit-level=high
+      - name: Prepare verified native resources
+        shell: powershell
+        run: .\tools\prepare-release.ps1
+      - name: Run regression and real Chromium tests
+        run: pnpm test
+      - name: Verify Windows package assembly
+        run: pnpm run pack

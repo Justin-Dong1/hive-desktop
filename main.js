@@ -267,6 +267,7 @@ function createWindow(display = screen.getPrimaryDisplay()) {
     }
   });
   win.setMenuBarVisibility(false);
+  win.webContents.setWindowOpenHandler(() => ({action:'deny'}));
   desktopWindows.set(display.id, win);
   const contentId=win.webContents.id;
   rendererHealth.set(contentId,{ready:false,last:Date.now(),created:Date.now()});
@@ -278,7 +279,9 @@ function createWindow(display = screen.getPrimaryDisplay()) {
   win.webContents.on('render-process-gone',(_e,details)=>{if(!quitting&&!rebuilding)failure('Renderer gone: '+details.reason);});
   win.webContents.on('did-fail-load',(_e,code,description)=>{if(code!==-3)failure('Load failed: '+description);});
   win.on('unresponsive',()=>failure('Window unresponsive'));
-  win.loadFile(path.join(ROOT, 'ui', 'index.html'), {query:{display:String(display.id),layout:layoutIdentities.get(String(display.id)),primary:String(display.id===screen.getPrimaryDisplay().id)}});
+  win.loadFile(path.join(ROOT, 'ui', 'index.html'), {query:{display:String(display.id),layout:layoutIdentities.get(String(display.id)),primary:String(display.id===screen.getPrimaryDisplay().id)}}).then(()=>{
+    win.webContents.on('will-navigate',event=>event.preventDefault());
+  }).catch(error=>failure('Load failed: '+error.message));
   win.once('ready-to-show', async () => {
     win.showInactive();
     const handle = win.getNativeWindowHandle().readBigUInt64LE().toString();

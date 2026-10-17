@@ -1,0 +1,47 @@
+name: 问题报告
+description: 报告蜂巢桌面的可复现问题（安全漏洞请使用私密安全报告）
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: 请先退出蜂巢桌面并确认 Windows 原桌面能够恢复。请勿上传包含个人便签、文件名或用户名的未脱敏日志。
+  - type: input
+    id: version
+    attributes:
+      label: 蜂巢桌面版本
+      placeholder: 例如 1.1.4-beta.1
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows 版本
+      placeholder: 例如 Windows 11 24H2
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 显示环境
+      description: 显示器数量、各自缩放比例、是否使用 Wallpaper Engine、使用的音乐播放器。
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: 按顺序写出操作和出现问题的位置。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期与实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 已脱敏日志或截图
+      description: 删除用户名、私人路径、便签、文件名和其他个人内容后再上传。

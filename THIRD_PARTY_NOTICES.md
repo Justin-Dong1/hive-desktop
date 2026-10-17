@@ -1,6 +1,6 @@
 # Third-party notices
 
-Original project code is licensed under GPL-3.0-only (see LICENSE). This does not relicense third-party code. Version 1.1.3 replaces the old Ms-PL NAudio 1.10 dependency with MIT-licensed NAudio 2.2.1 modules. Old installers are not retroactively relicensed or updated.
+Original project code is licensed under GPL-3.0-only (see LICENSE). This does not relicense third-party code. Version 1.1.3 and later replace the old Ms-PL NAudio 1.10 dependency with MIT-licensed NAudio 2.2.1 modules. Old installers are not retroactively relicensed or updated.
 
 ## Optional NAudio frequency spectrum component
 
