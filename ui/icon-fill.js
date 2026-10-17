@@ -5,7 +5,8 @@ const HiveIconFill=(()=>{
  function cropped(source){
   if(cache.has(source))return cache.get(source);
   const promise=new Promise(resolve=>{const image=new Image();image.onload=()=>{try{const canvas=document.createElement('canvas'),ratio=Math.min(1,256/Math.max(image.naturalWidth,image.naturalHeight));canvas.width=Math.max(1,Math.round(image.naturalWidth*ratio));canvas.height=Math.max(1,Math.round(image.naturalHeight*ratio));const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0,canvas.width,canvas.height);const box=bounds(ctx.getImageData(0,0,canvas.width,canvas.height).data,canvas.width,canvas.height);if(!box){resolve(source);return;}const result=document.createElement('canvas');result.width=128;result.height=128;const out=result.getContext('2d');out.imageSmoothingQuality='high';const side=Math.min(box.width,box.height);out.drawImage(canvas,box.x+(box.width-side)/2,box.y+(box.height-side)/2,side,side,0,0,128,128);resolve(result.toDataURL());}catch{resolve(source);}};image.onerror=()=>resolve(source);image.src=source;});
-  cache.set(source,promise);if(cache.size>256)cache.delete(cache.keys().next().value);return promise;
+  cache.set(source,promise);if(cache.size>256)cache.delete(cache.keys().next().value);
+  promise.then(result=>{if(result===source&&cache.get(source)===promise)cache.delete(source);});return promise;
  }
  function mode(item,preferences={}){return preferences[item.id]==='contain'?'contain':'inner';}
  function apply(img,source,style='inner'){style=style==='contain'?'contain':'inner';img.dataset.iconStyle=style;img.dataset.iconSource=source;img.style.objectFit=style==='inner'?'cover':'contain';img.src=source;if(style==='inner')cropped(source).then(result=>{if(img.isConnected&&img.dataset.iconStyle==='inner'&&img.dataset.iconSource===source)img.src=result;});}

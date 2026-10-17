@@ -6,7 +6,7 @@ module.exports=async context=>{
  if(execFileSync('git',['status','--porcelain','--untracked-files=normal'],{cwd:root,encoding:'utf8'}).trim())throw Error('Release requires a clean committed source tree');
  const files={};
  function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){const file=path.join(dir,e.name);if(e.isDirectory()){walk(file);continue;}const rel=path.relative(app,file).replace(/\\/g,'/');
-  if(!/^(main\.js|preload\.js|package\.json|taskbar-policy\.json|THIRD_PARTY_NOTICES\.md|ui\/|tools\/|vendor\/NAudio-1\.10\/)/.test(rel)||/^tools\/(test-|verify-|capture-)/.test(rel))throw Error('Unexpected packaged file: '+rel);
+  if(!/^(main\.js|preload\.js|package\.json|taskbar-policy\.json|THIRD_PARTY_NOTICES\.md|LICENSE$|ui\/|tools\/|vendor\/NAudio-1\.10\/)/.test(rel)||/^tools\/(test-|verify-|capture-)/.test(rel))throw Error('Unexpected packaged file: '+rel);
   const original=path.join(root,rel);if(!fs.existsSync(original))throw Error('Unknown packaged resource: '+rel);
   if(rel==='package.json'){const a=JSON.parse(fs.readFileSync(file)),b=JSON.parse(fs.readFileSync(original));for(const key of ['name','version','main'])if(a[key]!==b[key])throw Error('Package metadata mismatch: '+key);}
   else if(hash(file)!==hash(original))throw Error('Packaged source differs from current source: '+rel);

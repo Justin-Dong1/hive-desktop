@@ -13,12 +13,12 @@ module.exports=function(script){
     if(child!==current)return;buffer+=chunk;if(buffer.length>32*1024*1024){dispose();return;}
     const index=buffer.indexOf('\n');if(index<0)return;
     const line=buffer.slice(0,index).replace(/^\uFEFF/,'').trim();buffer=buffer.slice(index+1);
-    if(!pending)return;let result;try{result=JSON.parse(line);}catch{dispose();return;}
+    if(!pending)return;let result;try{result=JSON.parse(line);if(!result||typeof result.ok!=='boolean'||!Array.isArray(result.sessions)||result.sessions.some(s=>!s||typeof s.source!=='string'||typeof s.playing!=='boolean'))throw Error('Invalid media response');}catch{dispose();return;}
     const request=pending;pending=null;clearTimeout(request.timer);request.resolve(result);idle=setTimeout(dispose,60000);idle.unref();
    });
   }
   let resolve;const promise=new Promise(r=>resolve=r);pending={promise,resolve,timer:setTimeout(dispose,18000)};
-  child.stdin.write('status\n');return promise;
+  try{child.stdin.write('status\n');}catch{dispose();}return promise;
  }
  return {read,dispose};
 };

@@ -4,9 +4,9 @@ const {execFile}=require('child_process');
 module.exports=({app,ipcMain,BrowserWindow,root})=>{
  const file=path.join(app.getPath('userData'),'island-notes.json');
  let notes=[],loadError='';
- try{if(fs.existsSync(file)){notes=JSON.parse(fs.readFileSync(file,'utf8'));if(!Array.isArray(notes))throw new Error('Invalid notes file');}}catch(e){loadError=e.message;notes=[];}
+ try{if(fs.existsSync(file)){notes=JSON.parse(fs.readFileSync(file,'utf8'));const ids=new Set();if(!Array.isArray(notes)||notes.some(n=>{if(!n||typeof n.id!=='string'||!n.id||ids.has(n.id)||typeof n.text!=='string'||!Number.isSafeInteger(n.revision)||n.revision<1||!Number.isFinite(n.updated)||(n.deletedAt!==undefined&&(!Number.isFinite(n.deletedAt)||n.deletedAt<=0)))return true;ids.add(n.id);return false;}))throw new Error('Invalid notes file');}}catch(e){loadError=e.message;notes=[];}
  const activeNotes=()=>notes.filter(n=>!n.deletedAt);
- const broadcast=()=>{for(const w of BrowserWindow.getAllWindows())if(!w.isDestroyed())w.webContents.send('notes:changed',activeNotes());};
+ const broadcast=()=>{const active=activeNotes();for(const w of BrowserWindow.getAllWindows()){try{if(!w.isDestroyed()&&!w.webContents.isDestroyed?.())w.webContents.send('notes:changed',active);}catch{/* A closing renderer must not turn a committed save into a failure. */}}};
  ipcMain.handle('notes:list',()=>loadError?{ok:false,message:'便签文件读取失败，原文件已保留：'+loadError}:{ok:true,notes:activeNotes()});
  ipcMain.handle('notes:trash',()=>loadError?{ok:false,message:loadError}:{ok:true,notes:notes.filter(n=>n.deletedAt).sort((a,b)=>b.deletedAt-a.deletedAt)});
  ipcMain.handle('notes:write',(_event,request)=>{

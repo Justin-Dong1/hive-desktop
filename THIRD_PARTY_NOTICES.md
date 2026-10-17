@@ -1,5 +1,7 @@
 # Third-party notices
 
+Original project code is licensed under GPL-3.0-only (see LICENSE). This does not relicense third-party code. NAudio 1.10 uses Ms-PL, listed by GNU as GPL-incompatible. Existing bundled installers must remain unpublished pending dependency compatibility resolution and a fresh build; see docs/PUBLIC-READINESS.md.
+
 ## Optional NAudio frequency spectrum component
 
 The optional spectrum helper uses NAudio 1.10.0 under the Microsoft Public License (Ms-PL). Binaries are not included in this source repository. Obtain the official package and retain its licensing information when redistributing builds:

@@ -25,6 +25,7 @@ files:
   - '!tools/publish-draft.js'
   - taskbar-policy.json
   - THIRD_PARTY_NOTICES.md
+  - LICENSE
   - vendor/NAudio-1.10/NAudio.dll
   - vendor/NAudio-1.10/HiveSpectrum.exe
   - vendor/NAudio-1.10/LICENSE.txt

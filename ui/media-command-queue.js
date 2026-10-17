@@ -7,7 +7,7 @@
    busy:(source,action)=>pending.has(key(source,action)),
    run(source,action,execute,changed=()=>{}){
     const id=key(source,action);if(pending.has(id))return Promise.resolve();
-    pending.add(id);changed();
+    pending.add(id);try{changed();}catch(error){pending.delete(id);return Promise.reject(error);}
     const result=tail.then(execute).finally(()=>{pending.delete(id);changed();});
     tail=result.catch(()=>{});return result;
    }

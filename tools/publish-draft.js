@@ -4,6 +4,7 @@
 const {spawnSync,execFileSync}=require('child_process'),fs=require('fs'),path=require('path');
 const root=path.join(__dirname,'..'),repo='Justin-Dong1/hive-desktop';
 (async()=>{
+ if(require('../package.json').license==='GPL-3.0-only'&&fs.readFileSync(path.join(root,'tools','prepare-release.ps1'),'utf8').includes('naudio/1.10.0'))throw Error('Publishing blocked: resolve NAudio 1.10 Ms-PL / GPL compatibility first; see docs/PUBLIC-READINESS.md');
  const remote=execFileSync('git',['remote','get-url','origin'],{cwd:root,encoding:'utf8'}).trim();
  if(remote!==`https://github.com/${repo}.git`)throw Error('Unexpected publishing remote');
  const credential=spawnSync('git',['-c','credential.interactive=never','credential','fill'],{cwd:root,input:`protocol=https\nhost=github.com\npath=${repo}.git\n\n`,encoding:'utf8',env:{...process.env,GIT_TERMINAL_PROMPT:'0',GCM_INTERACTIVE:'never'}});

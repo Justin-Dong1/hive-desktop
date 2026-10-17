@@ -1,5 +1,6 @@
 'use strict';
 const fs=require('fs'),path=require('path'),crypto=require('crypto');
+const MAX_BYTES=16000000;
 const allowed=k=>/^hive-(grid-(settings|placements|pinned)|island|island-page)(:.*)?$/.test(k)||['hive-collection','hive-display-assignments','hive-icon-fit'].includes(k);
 function validate(doc){
  if(doc?.format!=='glass-hive-layout'||doc.version!==1||!doc.values||Array.isArray(doc.values)||typeof doc.values!=='object')throw Error('不是受支持的蜂窝布局备份');
@@ -20,10 +21,10 @@ module.exports=function(directory,store){
  let lastStamp=Math.max(0,...fs.readdirSync(directory).filter(n=>/^\d+-[a-f0-9]+\.json$/.test(n)).map(n=>Number(n.split('-')[0])));
  function document(reason){return {format:'glass-hive-layout',version:1,createdAt:new Date().toISOString(),reason,values:store.read()};}
  function save(reason='manual'){
-  const doc=validate(document(reason));lastStamp=Math.max(Date.now(),lastStamp+1);const id=lastStamp+'-'+crypto.randomBytes(4).toString('hex')+'.json';
-  const fd=fs.openSync(path.join(directory,id),'wx');try{fs.writeFileSync(fd,JSON.stringify(doc,null,2));fs.fsyncSync(fd);}finally{fs.closeSync(fd);}prune();return {id,...doc};
+  const doc=validate(document(reason)),content=JSON.stringify(doc,null,2);if(Buffer.byteLength(content,'utf8')>MAX_BYTES)throw Error('备份超过 16 MB');lastStamp=Math.max(Date.now(),lastStamp+1);const id=lastStamp+'-'+crypto.randomBytes(4).toString('hex')+'.json';
+  const fd=fs.openSync(path.join(directory,id),'wx');try{fs.writeFileSync(fd,content);fs.fsyncSync(fd);}finally{fs.closeSync(fd);}prune();return {id,...doc};
  }
- function read(file){if(fs.statSync(file).size>16000000)throw Error('备份超过 16 MB');return validate(JSON.parse(fs.readFileSync(file,'utf8').replace(/^\uFEFF/,'')));}
+ function read(file){if(fs.statSync(file).size>MAX_BYTES)throw Error('备份超过 16 MB');return validate(JSON.parse(fs.readFileSync(file,'utf8').replace(/^\uFEFF/,'')));}
  function list(){return fs.readdirSync(directory).filter(n=>/^\d+-[a-f0-9]+\.json$/.test(n)).sort((a,b)=>Number(b.split('-')[0])-Number(a.split('-')[0])||b.localeCompare(a)).flatMap(id=>{try{const file=path.join(directory,id);if(!fs.lstatSync(file).isFile())return [];const d=read(file);return [{id,createdAt:d.createdAt,reason:d.reason}];}catch{return [];}});}
  function prune(){for(const entry of list().slice(10)){const target=path.resolve(directory,entry.id);if(path.dirname(target)!==directory||!fs.lstatSync(target).isFile())throw Error('备份清理路径无效');fs.unlinkSync(target);}}
  function restore(doc){validate(doc);save('before-restore');return store.replace(doc.values);}
