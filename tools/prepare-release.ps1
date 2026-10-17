@@ -20,5 +20,6 @@ foreach($package in $packages){
  Copy-Item -LiteralPath (Join-Path $download ('package\lib\netstandard2.0\'+$package.Id+'.dll')) -Destination (Join-Path $vendor ($package.Id+'.dll'))
 }
 Copy-Item -LiteralPath (Join-Path $root 'licenses\NAudio-2.2.1.txt') -Destination (Join-Path $vendor 'LICENSE.txt')
-& (Join-Path $PSScriptRoot 'build-icon.ps1')
+$icon=Join-Path $root 'build\hive.ico'
+if(-not (Test-Path -LiteralPath $icon)){throw 'Reviewed build icon is missing; run tools/build-icon.ps1 and commit it before release'}
 & (Join-Path $PSScriptRoot 'build-spectrum.ps1')
