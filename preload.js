@@ -4,6 +4,9 @@ const { contextBridge, ipcRenderer } = require('electron');
 let layoutEpoch;
 
 contextBridge.exposeInMainWorld('glassHive', {
+  clockRead: () => ipcRenderer.invoke('clock:read'),
+  clockChange: request => ipcRenderer.invoke('clock:change',request),
+  onClockChanged: callback => ipcRenderer.on('clock:changed',(_event,state)=>callback(state)),
   spectrumActive: active => ipcRenderer.send('spectrum:active',active===true),
   onSpectrum: callback => ipcRenderer.on('spectrum:frame',(_event,values)=>callback(values)),
   syncLayout: (values,seed=false) => {const result=ipcRenderer.sendSync('layout:sync',values,seed,layoutEpoch);if(result.ok)layoutEpoch=result.epoch;return result;},
@@ -38,6 +41,7 @@ contextBridge.exposeInMainWorld('glassHive', {
   revealItem: (id) => ipcRenderer.invoke('desktop:reveal', id),
   systemStatus: () => ipcRenderer.invoke('system:status'),
   systemMetrics: () => ipcRenderer.invoke('system:metrics'),
+  systemVolume: (action='get',value) => ipcRenderer.invoke('system:volume',action,value),
   quit: () => ipcRenderer.invoke('app:quit'),
   onDesktopChanged: (callback) => ipcRenderer.on('desktop:changed', () => callback()),
   onStyleResult: (callback) => ipcRenderer.on('system-style', (_event, result) => callback(result))

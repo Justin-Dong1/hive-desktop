@@ -16,6 +16,7 @@ if(packageSmoke)app.setPath('userData',fs.mkdtempSync(path.join(os.tmpdir(),'hiv
 const DATA_ROOT=app.isPackaged?path.join(app.getPath('userData'),'diagnostics'):ROOT;
 fs.mkdirSync(DATA_ROOT,{recursive:true});
 require('./tools/spectrum-service')({app,ipcMain,root:ROOT});
+require('./tools/system-volume')({ipcMain,root:ROOT});
 const layoutStore=require('./tools/layout-store')(path.join(app.getPath('userData'),'desktop-layout.json'));
 const displayLayout=require('./tools/display-layout');
 let layoutIdentities=new Map();
@@ -68,24 +69,56 @@ let rebuilding = false;
 let topologyTimer;
 let systemStyled = false;
 let styleApplication,styleQueue=Promise.resolve();
+let desktopEpoch=0,publishedEpoch=-1,readinessPending=null;
+function invalidateDesktop(reason){
+ desktopEpoch++;publishedEpoch=-1;styleApplication=null;
+ try{fs.writeFileSync(path.join(DATA_ROOT,'desktop-ready.json'),JSON.stringify({pid:process.pid,time:new Date().toISOString(),ready:false,reason}));}catch{}
+}
 let quitting = false;
 const desktopWatchers = [];
 let changeTimer;
 let desktopPoll;
 const rendererHealth=new Map();
 let healthTimer,guardReady=false;
+let hostTimer,hostMonitor,hostHealthy=true;
+function attachDesktopWindow(win,ensure=false){
+ const display=screen.getAllDisplays().find(d=>desktopWindows.get(d.id)===win);
+ if(!display||win.isDestroyed())return Promise.reject(new Error('Desktop display is unavailable'));
+ const handle=win.getNativeWindowHandle().readBigUInt64LE().toString();
+ const physical=screen.dipToScreenRect(null,display.workArea);
+ return new Promise((resolve,reject)=>execFile('powershell.exe',[
+  '-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(ROOT,'tools','attach-desktop.ps1'),
+  '-WindowHandle',handle,'-X',String(physical.x),'-Y',String(physical.y),
+  '-Width',String(physical.width),'-Height',String(physical.height),
+  ...(ensure?['-Ensure','-ExpectedParent',win.desktopParent||'0']:[])
+ ],{windowsHide:true,timeout:10000},(error,stdout,stderr)=>{
+  if(error)return reject(new Error(String(stderr||error.message)));
+  win.desktopParent=String(stdout).trim();
+  fs.writeFileSync(path.join(DATA_ROOT,'desktop-host-status.json'),JSON.stringify({ok:true,parent:win.desktopParent,time:new Date().toISOString()}));
+  resolve();
+ }));
+}
 function failure(reason){
+ exitReason=String(reason);
  try{fs.appendFileSync(path.join(DATA_ROOT,'desktop-failures.log'),`${new Date().toISOString()} ${reason}\n`);}catch(_){}
  restoreAndQuit();
 }
 async function applyWhenReady(){
- if(quitting||rebuilding||!guardReady||!desktopWindows.size)return;
+ if(readinessPending)return readinessPending;
+ readinessPending=publishDesktopReady().finally(()=>{readinessPending=null;});
+ return readinessPending;
+}
+async function publishDesktopReady(){
+ if(quitting||rebuilding||!guardReady||!hostHealthy||!desktopWindows.size)return;
+ if(publishedEpoch===desktopEpoch)return;
  if(![...desktopWindows.values()].every(w=>rendererHealth.get(w.webContents.id)?.ready&&w.desktopAttached))return;
+ const epoch=desktopEpoch;
  if(!styleApplication)styleApplication=ps('Apply');
  const result=await styleApplication;systemStyled=result.ok;
- if(quitting||rebuilding)return;
+ if(quitting||rebuilding||!hostHealthy||epoch!==desktopEpoch)return;
  if(!result.ok){failure('System style failed: '+result.message);return;}
- fs.writeFileSync(path.join(DATA_ROOT,'desktop-ready.json'),JSON.stringify({pid:process.pid,time:new Date().toISOString(),screens:desktopWindows.size,ready:true}));
+ publishedEpoch=epoch;
+ fs.writeFileSync(path.join(DATA_ROOT,'desktop-ready.json'),JSON.stringify({pid:process.pid,executable:process.execPath,time:new Date().toISOString(),screens:desktopWindows.size,ready:true}));
   const rendererLayouts=await Promise.all([...desktopWindows.values()].map(w=>w.webContents.executeJavaScript('({display:displayId,key:layoutKey("hive-grid-placements"),placements:preferredPlacements})').catch(e=>({error:e.message}))));
   auditLayout('ready',screen.getAllDisplays().map(d=>({id:d.id,label:d.label,bounds:d.bounds,scaleFactor:d.scaleFactor})),rendererLayouts);
 }
@@ -122,7 +155,7 @@ app.commandLine.appendSwitch('disable-renderer-backgrounding');
 function ps(mode) {
   const execute=()=>new Promise((resolve) => {
     if(mode==='Apply'&&quitting){resolve({ok:false,message:'Exit in progress'});return;}
-    execFile('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', STYLE_SCRIPT, '-Mode', mode],
+    execFile('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', STYLE_SCRIPT,...(mode==='Apply'?['-OwnerId',String(process.pid),'-OwnerExecutable',process.execPath]:[]), '-Mode', mode],
       { windowsHide: true, timeout: 10000 }, (error, stdout, stderr) => resolve({
         ok: !error,
         message: String(stdout || stderr || error?.message || '').trim()
@@ -273,7 +306,7 @@ function createWindow(display = screen.getPrimaryDisplay()) {
   rendererHealth.set(contentId,{ready:false,last:Date.now(),created:Date.now()});
   win.webContents.on('did-start-loading',()=>{
    rendererHealth.set(contentId,{ready:false,last:Date.now(),created:Date.now()});
-   styleApplication=null;
+   invalidateDesktop('renderer-loading');
    if(systemStyled&&!quitting)ps('Restore').then(r=>{systemStyled=false;if(!r.ok)failure('Reload recovery failed: '+r.message);});
   });
   win.webContents.on('render-process-gone',(_e,details)=>{if(!quitting&&!rebuilding)failure('Renderer gone: '+details.reason);});
@@ -284,15 +317,13 @@ function createWindow(display = screen.getPrimaryDisplay()) {
   }).catch(error=>failure('Load failed: '+error.message));
   win.once('ready-to-show', async () => {
     win.showInactive();
-    const handle = win.getNativeWindowHandle().readBigUInt64LE().toString();
-    const physical=screen.dipToScreenRect(null,bounds);
-    const attached = await new Promise(resolve => {
-      execFile('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(ROOT,'tools','attach-desktop.ps1'), '-WindowHandle', handle,'-X',String(physical.x),'-Y',String(physical.y),'-Width',String(physical.width),'-Height',String(physical.height)],
-        { windowsHide:true, timeout:10000 }, (error, stdout, stderr) => resolve({ok:!error, parent:stdout?.trim(), error:stderr}));
-    });
-    fs.writeFileSync(path.join(DATA_ROOT,'desktop-host-status.json'), JSON.stringify(attached));
+    let attachmentError;
+    for(let attempt=0;attempt<3&&!quitting&&!win.isDestroyed();attempt++){
+     try{await attachDesktopWindow(win);attachmentError=null;break;}
+     catch(error){attachmentError=error;await new Promise(resolve=>setTimeout(resolve,1000));}
+    }
+    if(attachmentError){failure('Desktop attachment failed: '+attachmentError.message);return;}
     if (win.isDestroyed()) return;
-    if (!attached.ok) { failure('Desktop attachment failed: '+JSON.stringify(attached)); return; }
     win.desktopAttached=true;
     await applyWhenReady();
     const result={ok:true};
@@ -382,6 +413,8 @@ ipcMain.handle('desktop:settings',(_event,kind)=>{const urls={display:'ms-settin
 ipcMain.handle('desktop:menu',async()=>{
  if(menuActive)return {ok:false,message:'菜单已经打开'};
  menuActive=true;
+ // Let an in-flight native probe finish before intentionally hiding the windows for Explorer's menu.
+ while(hostMonitor?.isBusy()&&!quitting)await new Promise(resolve=>setTimeout(resolve,25));
  const point=screen.dipToScreenPoint(screen.getCursorScreenPoint());
  const windows=[...desktopWindows.values()];
  try{
@@ -521,17 +554,20 @@ ipcMain.handle('desktop:icon',async(event,id,reset)=>{
  for(const w of desktopWindows.values())if(!w.isDestroyed())w.webContents.send('desktop:changed');return {ok:true};
 });
 
+let exitReason='requested-exit';
 async function restoreAndQuit() {
   if (quitting) return;
   quitting = true;
+  try{fs.appendFileSync(path.join(DATA_ROOT,'lifecycle.log'),JSON.stringify({time:new Date().toISOString(),pid:process.pid,event:'exit-requested',reason:exitReason})+'\n');fs.writeFileSync(path.join(DATA_ROOT,'desktop-ready.json'),JSON.stringify({pid:process.pid,time:new Date().toISOString(),ready:false,reason:exitReason}));}catch{}
   clearTimeout(changeTimer); clearInterval(desktopPoll);
   clearTimeout(topologyTimer);
   clearInterval(healthTimer);
+  clearInterval(hostTimer);hostMonitor?.stop();
   globalShortcut.unregisterAll();
   desktopWatchers.forEach(watcher=>watcher.close());
   let restored=false;
   for(let attempt=0;attempt<3;attempt++){const result=await ps('Restore');if(result.ok){restored=true;break;}await new Promise(resolve=>setTimeout(resolve,1000));}
-  try{fs.writeFileSync(path.join(DATA_ROOT,'desktop-ready.json'),JSON.stringify({pid:process.pid,time:new Date().toISOString(),ready:false,restored}));}catch{}
+  try{fs.writeFileSync(path.join(DATA_ROOT,'desktop-ready.json'),JSON.stringify({pid:process.pid,time:new Date().toISOString(),ready:false,restored,reason:exitReason}));fs.appendFileSync(path.join(DATA_ROOT,'lifecycle.log'),JSON.stringify({time:new Date().toISOString(),pid:process.pid,event:'exit-restored',restored,reason:exitReason})+'\n');}catch{}
   app.exit(0);
 }
 
@@ -539,7 +575,10 @@ if (!app.requestSingleInstanceLock()) {
   // A secondary launch must not run desktop restoration belonging to the owner.
   app.exit(0);
 } else {
-app.on('second-instance', (_event,args) => {if(args.includes('--setup'))dialog.showMessageBox({message:'请先退出蜂巢桌面，再从开始菜单打开 Setup 调整启动选项。'});});
+app.on('second-instance', (_event,args) => {
+ if(args.includes('--setup'))dialog.showMessageBox({message:'请先退出蜂巢桌面，再从开始菜单打开 Setup 调整启动选项。'});
+ else hostMonitor?.check().catch(e=>failure(e.stack));
+});
 app.whenReady().then(async()=>{
   if(packageSmoke){
     await require('./tools/package-smoke')({app,root:ROOT,execFile});
@@ -549,12 +588,21 @@ app.whenReady().then(async()=>{
     if(process.argv.includes('--startup'))await new Promise(resolve=>setTimeout(resolve,15000));
     const proceed=await require('./tools/first-run')({app,dialog,execFile,root:ROOT});
     if(!proceed){app.exit(0);return;}
+  }else{
+    // npm start and the source shortcut must honor the same preference as the installer.
+    await new Promise(resolve=>execFile('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(ROOT,'tools','start-wallpaper.ps1'),'-ConfigRoot',ROOT],{windowsHide:true,timeout:12000},(error,out)=>{
+      fs.writeFileSync(path.join(DATA_ROOT,'wallpaper-status.json'),JSON.stringify({time:new Date().toISOString(),status:error?'unavailable':String(out).trim()}));resolve();
+    }));
   }
   const initialRestore=await ps('Restore');if(!initialRestore.ok)throw Error('Initial desktop restoration failed: '+initialRestore.message);
+  await new Promise(resolve=>execFile('powershell.exe',['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(ROOT,'tools','recovery-task.ps1')],{windowsHide:true,timeout:15000},(error,out)=>{
+   try{fs.writeFileSync(path.join(DATA_ROOT,'recovery-task-status.json'),JSON.stringify({time:new Date().toISOString(),ok:!error,result:String(out||error?.message||'').trim()}));}catch{}
+   resolve();
+  }));
   const heartbeat=path.join(app.getPath('userData'),`heartbeat-${process.pid}.txt`);
   fs.writeFileSync(heartbeat,String(Date.now()));
   const quote=s=>"'"+s.replace(/'/g,"''")+"'";
-  const guardArgs=`-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${path.join(ROOT,'tools','watchdog.ps1')}" -OwnerId ${process.pid} -Heartbeat "${heartbeat}" -ExecutablePath "${process.execPath}"`;
+  const guardArgs=`-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${path.join(ROOT,'tools','watchdog.ps1')}" -OwnerId ${process.pid} -Heartbeat "${heartbeat}" -ExecutablePath "${process.execPath}" -StatusPath "${path.join(DATA_ROOT,'desktop-ready.json')}"`;
   const guardCommand=`Start-Process -FilePath powershell.exe -ArgumentList ${quote(guardArgs)} -WindowStyle Hidden`;
   execFile('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(guardCommand,'utf16le').toString('base64')],{windowsHide:true},e=>{if(e)failure('Watchdog launch failed: '+e.message);});
   const guardDeadline=Date.now()+10000;
@@ -562,10 +610,18 @@ app.whenReady().then(async()=>{
   if(quitting)return;
   if(!fs.existsSync(heartbeat+'.guard'))throw Error('Watchdog did not acknowledge startup; native icons remain visible');
   guardReady=true;
+  fs.appendFileSync(path.join(DATA_ROOT,'lifecycle.log'),JSON.stringify({time:new Date().toISOString(),pid:process.pid,event:'guard-ready'})+'\n');
+  let lastHealth=Date.now(),resumeUntil=0;
+  const resumeHealth=()=>{const now=Date.now();resumeUntil=now+45000;lastHealth=now;for(const h of rendererHealth.values()){h.last=now;h.created=now;}fs.writeFileSync(heartbeat,String(now));};
+  require('electron').powerMonitor.on('resume',resumeHealth);
   healthTimer=setInterval(()=>{
    const now=Date.now();
-   if([...rendererHealth.values()].some(h=>(!h.ready&&now-h.created>75000)||(h.ready&&now-h.last>25000))){failure('Renderer readiness/heartbeat timeout');return;}
+   if(now-lastHealth>15000||now<lastHealth)resumeHealth();lastHealth=now;
    fs.writeFileSync(heartbeat,String(now));
+   if(now<resumeUntil)return;
+   let guardStamp=0;try{guardStamp=fs.statSync(heartbeat+'.guard').mtimeMs;}catch{}
+   if(!guardStamp||now-guardStamp>20000){failure('Watchdog heartbeat lost; restoring native desktop');return;}
+   if([...rendererHealth.values()].some(h=>(!h.ready&&now-h.created>75000)||(h.ready&&now-h.last>25000))){failure('Renderer readiness/heartbeat timeout');return;}
   },3000);
   globalShortcut.register('CommandOrControl+Alt+Shift+Q',()=>restoreAndQuit());
   watchDesktop();
@@ -575,7 +631,7 @@ app.whenReady().then(async()=>{
     const restored=await ps('Restore');
     if(quitting)return;
     if(!restored.ok){rebuilding=false;failure('Display rebuild recovery failed: '+restored.message);return;}
-    systemStyled=false;styleApplication=null;
+    systemStyled=false;invalidateDesktop('display-rebuilding');
     for(const window of desktopWindows.values())window.destroy();
     desktopWindows.clear();
     layoutIdentities=displayLayout.identify(screen.getAllDisplays());
@@ -585,7 +641,17 @@ app.whenReady().then(async()=>{
     broadcastIslands();
     rebuilding=false;
   };
+  require('./tools/clock-service')({app,ipcMain,BrowserWindow,Notification:require('electron').Notification,powerMonitor:require('electron').powerMonitor});
   await rebuild();
+  hostMonitor=require('./tools/desktop-host-monitor')({
+   paused:()=>quitting||rebuilding||menuActive,
+   windows:()=>[...desktopWindows.values()],
+   inspect:win=>attachDesktopWindow(win,true),
+   restore:async()=>{hostHealthy=false;invalidateDesktop('host-recovery');const result=await ps('Restore');systemStyled=false;return result;},
+   ready:()=>{hostHealthy=true;return applyWhenReady();},fail:failure,
+   log:error=>fs.appendFileSync(path.join(DATA_ROOT,'desktop-failures.log'),`${new Date().toISOString()} Host check: ${error.message}\n`)
+  });
+  hostTimer=setInterval(()=>hostMonitor.check().catch(e=>failure(e.stack)),10000);
   require('electron').powerMonitor.on('resume',()=>auditLayout('resume',screen.getAllDisplays().map(d=>({id:d.id,label:d.label,bounds:d.bounds,scaleFactor:d.scaleFactor}))));
   const schedule=()=>{clearTimeout(topologyTimer);topologyTimer=setTimeout(()=>{if(rebuilding){schedule();return;}rebuild().catch(e=>failure(e.stack));},800);};
   screen.on('display-added',schedule);screen.on('display-removed',schedule);screen.on('display-metrics-changed',schedule);

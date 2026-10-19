@@ -14,3 +14,10 @@ for(let i=1;i<=3;i++)fs.writeFileSync(path.join(dir,'backups',i+'-abc.json'),JSO
 const reopened=Backups(path.join(dir,'backups'),store);assert.deepStrictEqual(reopened.list().map(b=>b.id),recent.slice(-10).reverse());
 reopened.restore(reopened.selected(recent[5]));assert.equal(reopened.list().length,10);assert.equal(reopened.list()[0].reason,'before-restore');assert.deepStrictEqual(store.read(),original);
 console.log('PASS latest 10 across all types, same-millisecond ordering, startup cleanup, export preserved, oldest-backup restore');
+store.write({'hive-island-page:screen-a':'clock'});
+const clockBackup=reopened.save('auto');assert(reopened.list().some(b=>b.id===clockBackup.id));
+const exported=reopened.document('export');Backups.validate(exported);
+reopened.restore(saved);assert.equal(store.read()['hive-island-page:screen-a'],'notes');
+reopened.restore(exported);assert.equal(store.read()['hive-island-page:screen-a'],'clock');
+assert.throws(()=>Backups.validate({...exported,values:{'hive-island-page:screen-a':'unknown'}}));
+console.log('PASS clock page auto backup, export validation, before-restore backup and round trip');

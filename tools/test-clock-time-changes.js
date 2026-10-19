@@ -1,0 +1,30 @@
+'use strict';
+const assert=require('assert'),fs=require('fs'),os=require('os'),path=require('path'),create=require('./clock-store');
+const file=path.join(fs.mkdtempSync(path.join(os.tmpdir(),'hive-clock-jumps-')),'clock.json');
+let wall=10000000,mono=1000;let store=create(file,()=>wall,()=>mono);
+store.change({action:'add',kind:'timer',seconds:60,text:'timer'});
+store.change({action:'add',kind:'alarm',due:wall+30000,text:'alarm'});
+store.change({action:'watch:start'});
+wall+=3600000;mono+=1000;
+assert.deepEqual(store.tick().map(i=>i.kind),['alarm']);
+assert.equal(store.read().items.find(i=>i.kind==='timer').remaining,59000);
+assert.equal(store.read().watch.liveElapsed,1000);
+wall-=7200000;mono+=1000;assert.equal(store.tick().length,0);
+assert.equal(store.read().items.find(i=>i.kind==='timer').remaining,58000);
+assert.equal(store.read().watch.liveElapsed,2000);
+store.change({action:'add',kind:'alarm',due:wall+86400000,text:'after rollback'});
+// Reopen a checkpoint after calibration; legacy version-1 records remain readable.
+store=create(file,()=>wall,()=>mono);
+assert.equal(store.read().items.find(i=>i.kind==='timer').remaining,58000);
+assert.equal(store.read().watch.liveElapsed,2000);
+store.suspend();wall+=10000;store.resume();
+assert.equal(store.read().items.find(i=>i.kind==='timer').remaining,48000);
+assert.equal(store.read().watch.liveElapsed,12000);
+// A monotonic clock that already includes sleep must not count it twice.
+store.suspend();wall+=10000;mono+=10000;store.resume();
+assert.equal(store.read().items.find(i=>i.kind==='timer').remaining,38000);
+store.flush();wall+=5000;store=create(file,()=>wall,()=>mono);
+assert.equal(store.read().items.find(i=>i.kind==='timer').remaining,33000);
+assert.equal(store.read().watch.liveElapsed,27000);
+wall+=33000;mono+=33000;assert.equal(store.tick().length,1);assert.equal(store.tick().length,0);
+console.log('PASS forward/backward clock jumps, alarm wall time, monotonic timer/stopwatch, checkpoint reopen, sleep without double counting, offline duration');

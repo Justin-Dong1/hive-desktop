@@ -3,7 +3,7 @@ const assert=require('assert'),vm=require('vm'),fs=require('fs'),path=require('p
 const source=fs.readFileSync(path.join(__dirname,'../main.js'),'utf8');
 const fn=source.slice(source.indexOf('function ps(mode)'),source.indexOf('function isInside('));
 const calls=[],callbacks=[];
-const context={STYLE_SCRIPT:'test.ps1',execFile:(exe,args,options,done)=>{calls.push(args.at(-1));callbacks.push(done);}};
+const context={process:{pid:42,execPath:'hive.exe'},STYLE_SCRIPT:'test.ps1',execFile:(exe,args,options,done)=>{calls.push(args.at(-1));callbacks.push(done);}};
 vm.createContext(context);vm.runInContext('let styleQueue=Promise.resolve(),quitting=false;'+fn,context);
 (async()=>{
  const apply=vm.runInContext("ps('Apply')",context),restore=vm.runInContext("ps('Restore')",context);

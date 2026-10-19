@@ -62,9 +62,12 @@ FunctionEnd
     Abort
   ${EndIf}
   ${IfNot} ${isUpdated}
+    nsExec::ExecToStack '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\resources\app\tools\recovery-task.ps1" -Remove'
+    Pop $0
+    Pop $1
     DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "HiveDesktop"
     Delete "$newDesktopLink"
-    MessageBox MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON1 "是否保留蜂巢桌面的个人数据？$\r$\n$\r$\n点击“是”：保留布局、便签、备份和自定义图标，方便以后重新安装。$\r$\n点击“否”：彻底删除上述个人数据和图标缓存。$\r$\n$\r$\n下载目录中的原始安装包不属于程序数据，如不需要可由你手动删除。" /SD IDYES IDYES keepUserData IDNO deleteUserData
+    MessageBox MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON1 "是否保留蜂巢桌面的个人数据？$\r$\n$\r$\n点击“是”：保留布局、便签、闹钟、倒计时、秒表计时、备份和自定义图标，方便以后重新安装。$\r$\n点击“否”：彻底删除上述个人数据和图标缓存。$\r$\n$\r$\n下载目录中的原始安装包不属于程序数据，如不需要可由你手动删除。" /SD IDYES IDYES keepUserData IDNO deleteUserData
 deleteUserData:
     RMDir /r "$APPDATA\glass-hive-desktop"
     RMDir /r "$LOCALAPPDATA\GlassHiveDesktop"

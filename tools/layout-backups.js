@@ -7,7 +7,7 @@ function validate(doc){
  const entries=Object.entries(doc.values);if(!entries.length||entries.length>2000)throw Error('布局为空或过大');
  for(const [k,v]of entries){
   if(!allowed(k)||typeof v!=='string'||v.length>4000000)throw Error('布局包含无效字段');
-  if(k.startsWith('hive-island-page')){if(!['functions','notes','music'].includes(v))throw Error('页面无效');continue;}
+  if(k.startsWith('hive-island-page')){if(!['functions','notes','music','clock'].includes(v))throw Error('页面无效');continue;}
   const value=JSON.parse(v);if(!value||typeof value!=='object')throw Error('布局内容无效');
   if(k.startsWith('hive-grid-pinned')){if(!Array.isArray(value)||value.some(x=>typeof x!=='string'))throw Error('蜂窝列表无效');}
   else if(Array.isArray(value))throw Error('布局字段类型无效');
