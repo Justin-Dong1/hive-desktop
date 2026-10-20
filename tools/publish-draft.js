@@ -21,7 +21,8 @@ const root=path.join(__dirname,'..'),repo='Justin-Dong1/hive-desktop';
  for(const file of ['LICENSE','vendor/NAudio-2.2.1/NAudio.Core.dll','vendor/NAudio-2.2.1/NAudio.Wasapi.dll','vendor/NAudio-2.2.1/LICENSE.txt'])if(!manifest.files[file])throw Error('Required licensed resource missing: '+file);
  if(Object.keys(manifest.files).some(file=>/NAudio-1\.10|\/NAudio\.dll$/.test(file)))throw Error('Legacy dependency in release manifest');
  if(existing&&(!existing.draft||existing.target_commitish!==sha))throw Error('Existing release does not match this draft/commit; inspect before updating');
- const release=existing||await api('/releases','POST',{tag_name:tag,target_commitish:sha,name:`蜂巢桌面 ${version} · 安装测试版`,draft:true,prerelease:true,body:'Windows x64 安装测试版，无需 Node.js/pnpm。Wallpaper Engine 可选，内置频谱组件。\n\n首次引导支持登录启动和壁纸关联；布局和便签保留。\n\n注意：未代码签名，未完成真实安装/覆盖升级/卸载验收。请先在测试环境验证，再决定发布。请核对 SHA256SUMS.txt。\n\n详细验收范围见仓库 docs/INSTALLER-TESTING.md。'});
+ const notes=fs.readFileSync(path.join(root,'docs',`RELEASE-${version}.md`),'utf8');
+ const release=existing||await api('/releases','POST',{tag_name:tag,target_commitish:sha,name:`蜂巢桌面 ${version} · 安装测试版`,draft:true,prerelease:true,body:notes});
  console.log(JSON.stringify({draftId:release.id,assets:release.assets.map(a=>({name:a.name,size:a.size,state:a.state})),url:release.html_url}));
  if(process.argv.includes('--inspect'))return;
  for(const name of [`HiveDesktop-Setup-${version}-x64.exe`,'SHA256SUMS.txt','release-manifest.json']){

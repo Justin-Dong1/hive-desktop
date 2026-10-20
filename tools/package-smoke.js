@@ -7,6 +7,7 @@ module.exports=async({app,root,execFile})=>{
   if(actual!==expected)throw Error('Release resource mismatch: '+file);
  }
  const required=['preload.js','ui/index.html','tools/system-style.ps1','tools/watchdog.ps1','tools/recover-desktop.ps1','tools/media-session.ps1','tools/focus-game.ps1','vendor/NAudio-2.2.1/HiveSpectrum.exe','vendor/NAudio-2.2.1/NAudio.Core.dll','vendor/NAudio-2.2.1/NAudio.Wasapi.dll','LICENSE','vendor/NAudio-2.2.1/LICENSE.txt'];
+ required.push('tools/fallback-recovery-hidden.vbs','tools/fallback-recovery.ps1','tools/recovery-task.ps1','tools/desktop-status.ps1','tools/clock-service.js','tools/clock-store.js','ui/clock.js','ui/clock.css','tools/system-volume.js','tools/system-volume.ps1','ui/system-volume.js');
  for(const file of required)if(!fs.existsSync(path.join(root,file)))throw Error('Missing packaged resource: '+file);
  const result=await new Promise((resolve,reject)=>execFile(path.join(root,'vendor/NAudio-2.2.1/HiveSpectrum.exe'),['--test'],{windowsHide:true,timeout:15000},(err,out)=>err?reject(err):resolve(out.trim())));
  const report=process.argv.find(a=>a.startsWith('--smoke-report='))?.slice('--smoke-report='.length);

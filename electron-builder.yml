@@ -12,6 +12,7 @@ files:
   - ui/**
   - tools/*.js
   - tools/*.ps1
+  - tools/*.vbs
   - tools/*.cs
   - '!tools/test-*'
   - '!tools/verify-*'

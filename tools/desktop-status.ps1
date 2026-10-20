@@ -2,7 +2,7 @@ param([string]$StatusPath)
 $root=Split-Path $PSScriptRoot -Parent
 if(-not $StatusPath){$StatusPath=Join-Path $root 'desktop-ready.json'}
 try{
- $s=Get-Content -LiteralPath $StatusPath -Raw -ErrorAction Stop | ConvertFrom-Json
+ $s=Get-Content -LiteralPath $StatusPath -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json
  $process=Get-Process -Id $s.pid -ErrorAction SilentlyContinue
  $heartbeat=Join-Path ([Environment]::GetFolderPath('ApplicationData')) ('glass-hive-desktop\heartbeat-'+$s.pid+'.txt')
  $stamp=Get-Item -LiteralPath $heartbeat -ErrorAction SilentlyContinue
