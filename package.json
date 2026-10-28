@@ -14,7 +14,7 @@
     "dist": "pnpm run prepare:release && electron-builder --win --x64 --publish never"
   },
   "devDependencies": {
-    "electron": "44.8.0",
+    "electron": "44.9.1",
     "electron-builder": "26.15.3"
   }
 }
